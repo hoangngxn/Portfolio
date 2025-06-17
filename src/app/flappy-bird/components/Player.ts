@@ -1,3 +1,5 @@
+import { ImageLoader } from '../utils/imageLoader';
+
 export class Player {
   private x: number;
   private y: number;
@@ -8,29 +10,34 @@ export class Player {
   private height: number;
   private canvasHeight: number;
   private isDead: boolean;
+  private isIdle: boolean;
 
   constructor(canvasWidth: number, canvasHeight: number) {
-    this.width = 50;
-    this.height = 35;
+    this.width = 34; // Bird image width
+    this.height = 24; // Bird image height
     this.x = canvasWidth / 4;
     this.y = canvasHeight / 2;
     this.velocity = 0;
-    this.gravity = 0.07;
-    this.jumpForce = -3.5;
+    this.gravity = 0.03;
+    this.jumpForce = -2;
     this.canvasHeight = canvasHeight;
     this.isDead = false;
+    this.isIdle = true;
   }
 
   update() {
-    // Apply gravity
-    this.velocity += this.gravity;
-    this.y += this.velocity;
+    if (!this.isIdle) {
+      // Apply gravity only if not idle
+      this.velocity += this.gravity;
+      this.y += this.velocity;
+    }
   }
 
   checkCollision(): boolean {
-    // Check collision with top and bottom boundaries
-    const topCollision = this.y - this.width / 2 <= 0;
-    const bottomCollision = this.y + this.width / 2 >= this.canvasHeight;
+    // Check collision with top boundary
+    const topCollision = this.y <= 0;
+    // Check collision with bottom boundary (canvas height)
+    const bottomCollision = this.y + this.height >= this.canvasHeight;
     
     return topCollision || bottomCollision;
   }
@@ -39,10 +46,12 @@ export class Player {
     this.y = this.canvasHeight / 2;
     this.velocity = 0;
     this.isDead = false;
+    this.isIdle = true;
   }
 
   jump() {
     if (!this.isDead) {
+      this.isIdle = false; // Exit idle state on first jump
       this.velocity = this.jumpForce;
     }
   }
@@ -52,25 +61,16 @@ export class Player {
   }
 
   draw(ctx: CanvasRenderingContext2D, isDead: boolean = false) {
-    // Draw the bird (temporary yellow circle)
-    ctx.fillStyle = isDead ? '#FF0000' : '#FFD700';
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.width / 2, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Draw the bird's eye
-    ctx.fillStyle = '#000';
-    ctx.beginPath();
-    ctx.arc(this.x + 10, this.y - 5, 5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Draw the bird's beak
-    ctx.fillStyle = '#FF6B6B';
-    ctx.beginPath();
-    ctx.moveTo(this.x + 20, this.y);
-    ctx.lineTo(this.x + 35, this.y);
-    ctx.lineTo(this.x + 20, this.y + 5);
-    ctx.fill();
+    const birdImage = ImageLoader.getImage('birdMid');
+    
+    // Draw the bird
+    ctx.drawImage(
+      birdImage,
+      this.x,
+      this.y,
+      this.width,
+      this.height
+    );
   }
 
   getPosition() {

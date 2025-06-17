@@ -1,3 +1,5 @@
+import { ImageLoader } from '../utils/imageLoader';
+
 export class Pipe {
   private x: number;
   private gapY: number;
@@ -6,15 +8,17 @@ export class Pipe {
   private speed: number;
   private canvasHeight: number;
   private passed: boolean;
+  private pipeHeight: number;
 
   constructor(canvasWidth: number, canvasHeight: number) {
-    this.width = 80;
-    this.gapHeight = 200;
-    this.speed = 0.85;
+    this.width = 50;
+    this.gapHeight = 160;
+    this.speed = 0.65;
     this.canvasHeight = canvasHeight;
     this.x = canvasWidth;
     this.gapY = this.getRandomGapPosition();
     this.passed = false;
+    this.pipeHeight = 320; // Height of the pipe image
   }
 
   private getRandomGapPosition(): number {
@@ -28,24 +32,23 @@ export class Pipe {
   }
 
   draw(ctx: CanvasRenderingContext2D) {
-    // Draw top pipe
-    ctx.fillStyle = '#75C147';
-    ctx.fillRect(this.x, 0, this.width, this.gapY);
+    const pipeImage = ImageLoader.getImage('pipe');
     
+    // Draw top pipe (flipped)
+    ctx.save();
+    ctx.translate(this.x, this.gapY);
+    ctx.scale(1, -1);
+    ctx.drawImage(pipeImage, 0, 0, this.width, this.pipeHeight);
+    ctx.restore();
+
     // Draw bottom pipe
-    ctx.fillRect(
+    ctx.drawImage(
+      pipeImage,
       this.x,
       this.gapY + this.gapHeight,
       this.width,
-      this.canvasHeight - (this.gapY + this.gapHeight)
+      this.pipeHeight
     );
-
-    // Draw pipe edges
-    ctx.fillStyle = '#558B2F';
-    // Top pipe edge
-    ctx.fillRect(this.x - 2, this.gapY - 20, this.width + 4, 20);
-    // Bottom pipe edge
-    ctx.fillRect(this.x - 2, this.gapY + this.gapHeight, this.width + 4, 20);
   }
 
   checkCollision(birdX: number, birdY: number, birdRadius: number): boolean {

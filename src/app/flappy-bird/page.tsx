@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Player } from './components/Player';
 import { Pipe } from './components/Pipe';
+import { ImageLoader } from './utils/imageLoader';
 
 export default function FlappyBird() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [gameState, setGameState] = useState<'start' | 'playing' | 'dead'>('start');
+  const [gameState, setGameState] = useState<'playing' | 'dead'>('playing');
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
 
@@ -16,17 +17,26 @@ export default function FlappyBird() {
   const animationFrameRef = useRef<number>(0);
   const lastPipeSpawnTime = useRef<number>(0);
   const isDeadRef = useRef<boolean>(false);
+  const gameStartTime = useRef<number>(0);
+  const backgroundX = useRef<number>(0);
+  const baseX = useRef<number>(0);
 
-  const CANVAS_WIDTH = 800;
-  const CANVAS_HEIGHT = 600;
+  const CANVAS_WIDTH = 288;
+  const CANVAS_HEIGHT = 512;
+  const BASE_HEIGHT = 112;
   const PIPE_SPAWN_INTERVAL = 2500; // Spawn a new pipe every 2.5 seconds
+  const PIPE_START_DELAY = 2000; // Start spawning pipes 2 seconds after first flap
+  const SCROLL_SPEED = 0.65; // Same as pipe speed
 
   const initGame = () => {
     if (!canvasRef.current) return;
-    playerRef.current = new Player(CANVAS_WIDTH, CANVAS_HEIGHT);
+    playerRef.current = new Player(CANVAS_WIDTH, CANVAS_HEIGHT - BASE_HEIGHT);
     pipesRef.current = [];
     setScore(0);
     isDeadRef.current = false;
+    gameStartTime.current = 0;
+    backgroundX.current = 0;
+    baseX.current = 0;
   };
 
   const handleInput = (e: KeyboardEvent) => {
@@ -36,11 +46,14 @@ export default function FlappyBird() {
     // Prevent page scrolling
     e.preventDefault();
 
-    if (gameState === 'start') {
-      setGameState('playing');
-      initGame();
-    } else if (gameState === 'playing') {
-      playerRef.current?.jump();
+    if (gameState === 'playing') {
+      if (playerRef.current) {
+        // If this is the first flap, record the time
+        if (gameStartTime.current === 0) {
+          gameStartTime.current = performance.now();
+        }
+        playerRef.current.jump();
+      }
     } else if (gameState === 'dead') {
       // Go directly to playing state from death
       setGameState('playing');
@@ -56,18 +69,52 @@ export default function FlappyBird() {
     setGameState('dead');
   };
 
+  const drawBackground = (ctx: CanvasRenderingContext2D) => {
+    const backgroundImage = ImageLoader.getImage('background');
+    const baseImage = ImageLoader.getImage('base');
+    
+    // Draw scrolling background
+    ctx.drawImage(backgroundImage, backgroundX.current, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    ctx.drawImage(backgroundImage, backgroundX.current + CANVAS_WIDTH, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    
+    // Draw scrolling base
+    const baseY = CANVAS_HEIGHT - BASE_HEIGHT;
+    ctx.drawImage(baseImage, baseX.current, baseY, CANVAS_WIDTH, BASE_HEIGHT);
+    ctx.drawImage(baseImage, baseX.current + CANVAS_WIDTH, baseY, CANVAS_WIDTH, BASE_HEIGHT);
+
+    // Update scroll positions
+    if (gameState === 'playing' && !isDeadRef.current) {
+      backgroundX.current -= SCROLL_SPEED;
+      baseX.current -= SCROLL_SPEED;
+
+      // Reset positions when they scroll off screen
+      if (backgroundX.current <= -CANVAS_WIDTH) {
+        backgroundX.current = 0;
+      }
+      if (baseX.current <= -CANVAS_WIDTH) {
+        baseX.current = 0;
+      }
+    }
+  };
+
   const gameLoop = (timestamp: number) => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx || !playerRef.current) return;
 
     // Clear canvas
-    ctx.fillStyle = '#87CEEB'; // Sky blue background
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Spawn new pipes only during gameplay
-    if (gameState === 'playing' && timestamp - lastPipeSpawnTime.current > PIPE_SPAWN_INTERVAL) {
-      pipesRef.current.push(new Pipe(CANVAS_WIDTH, CANVAS_HEIGHT));
+    // Draw background and base
+    drawBackground(ctx);
+
+    // Spawn new pipes only during gameplay and after the start delay
+    if (gameState === 'playing' && 
+        !isDeadRef.current && 
+        gameStartTime.current > 0 && 
+        timestamp - gameStartTime.current > PIPE_START_DELAY &&
+        timestamp - lastPipeSpawnTime.current > PIPE_SPAWN_INTERVAL) {
+      pipesRef.current.push(new Pipe(CANVAS_WIDTH, CANVAS_HEIGHT - BASE_HEIGHT));
       lastPipeSpawnTime.current = timestamp;
     }
 
@@ -125,12 +172,18 @@ export default function FlappyBird() {
     canvas.width = CANVAS_WIDTH;
     canvas.height = CANVAS_HEIGHT;
 
-    // Add keyboard event listener
-    window.addEventListener('keydown', handleInput);
+    // Load images before starting the game
+    ImageLoader.loadImages().then(() => {
+      // Initialize game immediately
+      initGame();
+      
+      // Add keyboard event listener
+      window.addEventListener('keydown', handleInput);
 
-    // Start game loop for all states
-    lastPipeSpawnTime.current = performance.now();
-    animationFrameRef.current = requestAnimationFrame(gameLoop);
+      // Start game loop
+      lastPipeSpawnTime.current = performance.now();
+      animationFrameRef.current = requestAnimationFrame(gameLoop);
+    });
 
     return () => {
       if (animationFrameRef.current) {
@@ -154,13 +207,6 @@ export default function FlappyBird() {
         <div className="absolute top-4 left-4 text-white text-2xl font-bold">
           Score: {score}
         </div>
-        
-        {gameState === 'start' && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-white bg-black bg-opacity-30">
-            <h1 className="text-4xl font-bold mb-4">Flappy Bird</h1>
-            <p className="text-xl">Press Space to Start</p>
-          </div>
-        )}
         
         {gameState === 'dead' && (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-white bg-black bg-opacity-30">
