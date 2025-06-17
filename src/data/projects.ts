@@ -17,13 +17,13 @@ export interface Project {
 
 export const projects: Project[] = [
   {
-    title: "Personal Portfolio",
+    title: "Portfolio",
     description: "A modern, interactive portfolio website showcasing my work as a Full-stack Developer. Features a sleek glass-morphism design with smooth animations, interactive elements, and a dynamic project showcase.",
     technologies: ["Next.js", "TypeScript", "Tailwind CSS", "Radix UI", "React Query"],
     githubUrl: "https://github.com/hoangngxn/portfolio",
     type: "web-app",
     slug: "portfolio",
-    featuredImage: "/projects/portfolio/portfolio.png",
+    featuredImage: "/projects/portfolio/Portfo1.png",
     details: `A sophisticated portfolio website built with modern web technologies.
     The project demonstrates advanced frontend development techniques and interactive design.
     
@@ -45,8 +45,8 @@ export const projects: Project[] = [
       "Dark theme with glowing accents"
     ],
     gallery: [
-      "/projects/portfolio/portfolio.png",
-      "/projects/portfolio/portfolio2.png"
+      "/projects/portfolio/Portfo1.png",
+      "/projects/portfolio/Portfo2.png"
     ]
   },
   {
@@ -56,7 +56,7 @@ export const projects: Project[] = [
     githubUrl: "https://github.com/hoangngxn/reasoning_chains_chatbot",
     type: "fullstack",
     slug: "reasoning-chains",
-    featuredImage: "/projects/reasoning-chains/RC2.png",
+    featuredImage: "/projects/reasoning-chains/RC1.png",
     details: `A sophisticated AI chatbot that combines structured reasoning with RAG capabilities.
     The system demonstrates advanced natural language processing and document retrieval techniques.
     
@@ -76,7 +76,7 @@ export const projects: Project[] = [
       "Interactive chat interface"
     ],
     gallery: [
-      "/projects/reasoning-chains/RC.png",
+      "/projects/reasoning-chains/RC2.png",
       "/projects/reasoning-chains/RC3.png"
     ]
   },
@@ -88,7 +88,7 @@ export const projects: Project[] = [
     githubUrlBE: "https://github.com/hoangngxn/tutorhub_be",
     type: "fullstack",
     slug: "tutorhub",
-    featuredImage: "/projects/tutorhub/featured.png",
+    featuredImage: "/projects/tutorhub/TutorHub1.png",
     details: `A comprehensive tutoring platform that connects students with qualified tutors.
     Built with modern web technologies and robust backend architecture.
     
@@ -108,8 +108,8 @@ export const projects: Project[] = [
       "Payment integration"
     ],
     gallery: [
-      "/projects/tutorhub/TutorHub.png",
-      "/projects/tutorhub/TutorHub2.png"
+      "/projects/tutorhub/TutorHub2.png",
+      "/projects/tutorhub/TutorHub3.png"
     ]
   },
   {
