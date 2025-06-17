@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Hoang Nguyen's Portfolio
 
-## Getting Started
+![Portfolio Preview](/Portfolio.png)
 
-First, run the development server:
+A modern, interactive portfolio website showcasing my work as a Full-stack Developer. Built with Next.js and featuring a sleek, glass-morphism design with smooth animations and interactive elements.
 
+## 🌟 Features
+
+- **Modern Design**: Glass-morphism UI with smooth animations and transitions
+- **Interactive Elements**: Bouncing tech stack logos with collision detection
+- **Smooth Navigation**: Snap scrolling with smooth transitions between sections
+- **Responsive Layout**: Fully responsive design that works on all devices
+- **Project Showcase**: Detailed project pages with galleries and descriptions
+- **Background Music**: Ambient background music with volume controls
+- **Dark Theme**: Elegant dark theme with glowing accents
+
+## 🛠️ Technologies
+
+- **Framework**: Next.js 14 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS with custom animations
+- **UI Components**: Radix UI primitives
+- **State Management**: React Query
+- **Icons**: Lucide Icons
+- **Animations**: CSS animations and transitions
+- **Deployment**: Vercel
+
+## 🚀 Getting Started
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/portfolio.git
+```
+
+2. Install dependencies:
+```bash
+npm install
+# or
+yarn install
+# or
+pnpm install
+```
+
+3. Run the development server:
 ```bash
 npm run dev
 # or
 yarn dev
 # or
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📁 Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/                 # Next.js app router pages
+├── components/         # React components
+│   ├── ui/            # Reusable UI components
+│   └── sections/      # Page sections
+├── data/              # Static data and content
+├── hooks/             # Custom React hooks
+├── lib/               # Utility functions
+└── styles/            # Global styles
+```
 
-## Learn More
+## 🎨 Design Features
 
-To learn more about Next.js, take a look at the following resources:
+- Glass-morphism cards with backdrop blur
+- Smooth scroll snap navigation
+- Floating animations
+- Glowing text effects
+- Interactive bouncing logos
+- Custom scrollbar styling
+- Responsive grid layouts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📄 License
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is open source and available under the [MIT License](LICENSE).
