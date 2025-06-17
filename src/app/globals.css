@@ -156,6 +156,13 @@
 /* Custom scroll behavior */
 html {
   scroll-behavior: smooth;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* Custom scrollbar styling */
@@ -176,23 +183,41 @@ html {
   background: rgba(var(--primary), 0.5);
 }
 
-/* Smooth scroll snap */
+/* Improved snap scrolling */
 .snap-container {
   scroll-snap-type: y mandatory;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
-  /* Add scroll speed control */
-  scroll-timeline: --scroll;
-  scroll-timeline-axis: block;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .snap-section {
   scroll-snap-align: start;
   scroll-snap-stop: always;
+  min-height: 100vh;
+  width: 100%;
   transition: transform 0.3s ease-out;
 }
 
-/* Optional: Add a subtle transition for smoother animations */
-.snap-section {
-  transition: transform 0.3s ease-out;
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .snap-container {
+    scroll-snap-type: y proximity;
+  }
+  
+  .snap-section {
+    min-height: 100vh;
+    padding: 1rem;
+  }
+}
+
+/* Prevent horizontal scroll on mobile */
+@media (max-width: 640px) {
+  body {
+    overflow-x: hidden;
+    position: relative;
+    width: 100%;
+  }
 }

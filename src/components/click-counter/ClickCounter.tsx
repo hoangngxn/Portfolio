@@ -45,7 +45,7 @@ const ClickCounter: React.FC = () => {
   useEffect(() => {
     // Initialize click sound
     clickSoundRef.current = new Audio('music/click.mp3');
-    clickSoundRef.current.volume = 0.05;
+    clickSoundRef.current.volume = 0.03;
     // Preload the audio
     clickSoundRef.current.load();
 

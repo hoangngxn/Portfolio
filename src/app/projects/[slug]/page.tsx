@@ -35,7 +35,7 @@ const ProjectDetail = () => {
   const ProjectIcon = project.type === "web-app" ? Globe : project.type === "software" ? Database : Code2;
 
   return (
-    <main className="min-h-screen py-24 px-6">
+    <main className="min-h-screen py-24 px-6 bg-background bg-cover bg-fixed">
       <div className="max-w-6xl mx-auto">
         {/* Back Button */}
         <Link 

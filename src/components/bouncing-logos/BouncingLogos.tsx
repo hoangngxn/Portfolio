@@ -12,7 +12,7 @@ const BouncingLogos: React.FC = () => {
   useEffect(() => {
     // Initialize hit sound
     hitSoundRef.current = new Audio('/music/hitsound.mp3');
-    hitSoundRef.current.volume = 0.05;
+    hitSoundRef.current.volume = 0.03;
   }, []);
 
   useEffect(() => {
@@ -30,21 +30,25 @@ const BouncingLogos: React.FC = () => {
           let newDy = logo.dy;
           let hitWall = false;
 
-          // Boundary checks
-          if (newX <= 0 || newX >= container.clientWidth - 96) {
+          // Get the current logo size based on screen width
+          const isMobile = window.innerWidth < 768;
+          const logoSize = isMobile ? 48 : 96; // 48px for mobile, 96px for desktop
+
+          // Boundary checks with responsive size
+          if (newX <= 0 || newX >= container.clientWidth - logoSize) {
             newDx = -newDx;
-            newX = Math.max(0, Math.min(newX, container.clientWidth - 96));
+            newX = Math.max(0, Math.min(newX, container.clientWidth - logoSize));
             hitWall = true;
           }
-          if (newY <= 0 || newY >= container.clientHeight - 96) {
+          if (newY <= 0 || newY >= container.clientHeight - logoSize) {
             newDy = -newDy;
-            newY = Math.max(0, Math.min(newY, container.clientHeight - 96));
+            newY = Math.max(0, Math.min(newY, container.clientHeight - logoSize));
             hitWall = true;
           }
 
           // Play hit sound if wall was hit
           if (hitWall && hitSoundRef.current) {
-            hitSoundRef.current.currentTime = 0; // Reset sound to start
+            hitSoundRef.current.currentTime = 0;
             hitSoundRef.current.play().catch(err => console.log('Error playing sound:', err));
           }
 
@@ -74,7 +78,8 @@ const BouncingLogos: React.FC = () => {
         <div
           key={logo.id}
           id={logo.id}
-          className="absolute w-24 h-24 glass-card rounded-xl opacity-80 flex items-center justify-center"
+          className="absolute glass-card rounded-xl opacity-80 flex items-center justify-center
+            w-12 h-12 md:w-24 md:h-24" // Responsive size: 48px on mobile, 96px on desktop
           style={{
             transform: `translate(${logo.x}px, ${logo.y}px)`,
             transition: 'transform 16ms linear'
@@ -85,7 +90,7 @@ const BouncingLogos: React.FC = () => {
             alt={logo.alt}
             width={logo.width}
             height={logo.height}
-            className={logo.className}
+            className="w-8 h-8 md:w-14 md:h-14" // Responsive image size
           />
         </div>
       ))}

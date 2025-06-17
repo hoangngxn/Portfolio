@@ -7,8 +7,9 @@ import { useToast } from "@/hooks/use-toast"
 
 const MediaPlayer: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false)
-  const [volume, setVolume] = useState(0.1)
+  const [volume, setVolume] = useState(0.05)
   const [isMuted, setIsMuted] = useState(false)
+  const [minimized, setMinimized] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const { toast } = useToast()
 
@@ -70,6 +71,13 @@ const MediaPlayer: React.FC = () => {
     }
   }, [])
 
+  useEffect(() => {
+    // Default to minimized on mobile
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setMinimized(true)
+    }
+  }, [])
+
   const togglePlay = () => {
     if (!audioRef.current) return
 
@@ -109,32 +117,41 @@ const MediaPlayer: React.FC = () => {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 glass-card rounded-xl p-3 flex items-center gap-3">
+    <div
+      className={`fixed bottom-4 right-4 z-50 glass-card rounded-xl p-3 flex items-center gap-3 transition-all duration-200 ${minimized ? 'w-auto' : 'w-fit'}`}
+      style={{ cursor: 'pointer' }}
+      onClick={() => setMinimized((m) => !m)}
+      tabIndex={0}
+      aria-label={minimized ? 'Expand player' : 'Minimize player'}
+    >
       <button
-        onClick={togglePlay}
+        onClick={e => { e.stopPropagation(); togglePlay(); }}
         className="glass-card rounded-lg p-2 hover:bg-white/10 transition-colors"
         aria-label={isPlaying ? 'Pause' : 'Play'}
       >
         {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
       </button>
-      
-      <button
-        onClick={toggleMute}
-        className="glass-card rounded-lg p-2 hover:bg-white/10 transition-colors"
-        aria-label={isMuted ? 'Unmute' : 'Mute'}
-      >
-        {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-      </button>
-
-      <div className="w-24">
-        <Slider
-          value={[volume]}
-          onValueChange={handleVolumeChange}
-          max={1}
-          step={0.01}
-          className="w-full"
-        />
-      </div>
+      {!minimized && (
+        <>
+          <button
+            onClick={e => { e.stopPropagation(); toggleMute(); }}
+            className="glass-card rounded-lg p-2 hover:bg-white/10 transition-colors"
+            aria-label={isMuted ? 'Unmute' : 'Mute'}
+          >
+            {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+          </button>
+          <div className="w-24">
+            <Slider
+              value={[volume]}
+              onValueChange={handleVolumeChange}
+              max={1}
+              step={0.01}
+              className="w-full"
+              onClick={e => e.stopPropagation()}
+            />
+          </div>
+        </>
+      )}
     </div>
   )
 }
