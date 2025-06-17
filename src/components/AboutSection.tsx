@@ -27,13 +27,13 @@ const AboutSection: React.FC = () => {
   ]
 
   return (
-    <section className="py-24 px-6">
+    <section className="h-screen flex items-center justify-center py-24 px-6 snap-section">
       <div className="max-w-6xl mx-auto">
         {/* Section Header */}
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-6 glow-text">About Me</h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            I&apos;m a backend-focused developer with a background in data analysis. I specialize in building efficient APIs, managing databases, and deploying scalable systems using Node.js, TypeScript, Python and PostgreSQL. Passionate about clean code and continuous learning.
+          Recent graduate in Computer Science with a strong foundation in software development and problem-solving. Proficient in multiple programming languages and frameworks with a passion for building practical, scalable solutions.
           </p>
         </div>
 
@@ -52,18 +52,14 @@ const AboutSection: React.FC = () => {
 
         {/* Experience Stats */}
         <div className="mt-16 glass-card rounded-2xl p-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-center max-w-2xl mx-auto">
             <div className="fade-in-up" style={{ animationDelay: '600ms' }}>
-              <div className="text-4xl font-bold text-primary mb-2">2+</div>
+              <div className="text-4xl font-bold text-primary mb-2">1,5+</div>
               <div className="text-muted-foreground">Years Experience</div>
             </div>
             <div className="fade-in-up" style={{ animationDelay: '700ms' }}>
-              <div className="text-4xl font-bold text-primary mb-2">30+</div>
+              <div className="text-4xl font-bold text-primary mb-2">10+</div>
               <div className="text-muted-foreground">Projects Completed</div>
-            </div>
-            <div className="fade-in-up" style={{ animationDelay: '800ms' }}>
-              <div className="text-4xl font-bold text-primary mb-2">20+</div>
-              <div className="text-muted-foreground">Happy Clients</div>
             </div>
           </div>
         </div>

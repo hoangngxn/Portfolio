@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useParams } from "next/navigation";
 import { Github, ExternalLink, Code2, Database, Globe, ChevronDown, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import ImageModal from "@/components/ui/image-modal";
 
 // Import the same Project interface and projects data
 import { projects } from "@/data/projects"; // We'll create this file next
@@ -12,6 +13,7 @@ import { projects } from "@/data/projects"; // We'll create this file next
 const ProjectDetail = () => {
   const params = useParams();
   const project = projects.find((p) => p.slug === params.slug);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   if (!project) {
     return (
@@ -37,7 +39,7 @@ const ProjectDetail = () => {
       <div className="max-w-6xl mx-auto">
         {/* Back Button */}
         <Link 
-          href="/"
+          href="/#projects"
           className="glass-card glass-hover rounded-lg px-4 py-2 text-foreground font-semibold inline-flex items-center space-x-2 mb-8"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -120,13 +122,19 @@ const ProjectDetail = () => {
         <div className="space-y-8">
           {/* Featured Image */}
           {project.featuredImage && (
-            <div className="glass-card rounded-2xl overflow-hidden">
+            <div 
+              className="glass-card rounded-2xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform"
+              onClick={() => setSelectedImage(project.featuredImage!)}
+            >
               <Image
                 src={project.featuredImage}
                 alt={project.title}
-                width={1200}
-                height={600}
+                width={1600}
+                height={900}
+                quality={100}
+                priority
                 className="w-full h-auto object-cover"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 1400px"
               />
             </div>
           )}
@@ -162,13 +170,19 @@ const ProjectDetail = () => {
               <h2 className="text-2xl font-bold mb-4">Project Gallery</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {project.gallery.map((image, index) => (
-                  <div key={index} className="glass-card rounded-xl overflow-hidden">
+                  <div 
+                    key={index} 
+                    className="glass-card rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform"
+                    onClick={() => setSelectedImage(image)}
+                  >
                     <Image
                       src={image}
                       alt={`${project.title} gallery image ${index + 1}`}
-                      width={600}
-                      height={400}
+                      width={1200}
+                      height={800}
+                      quality={100}
                       className="w-full h-auto object-cover"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 1400px"
                     />
                   </div>
                 ))}
@@ -191,6 +205,14 @@ const ProjectDetail = () => {
           )}
         </div>
       </div>
+
+      {/* Image Modal */}
+      <ImageModal
+        isOpen={!!selectedImage}
+        onClose={() => setSelectedImage(null)}
+        imageUrl={selectedImage || ''}
+        alt={project.title}
+      />
     </main>
   );
 };

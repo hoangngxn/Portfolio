@@ -1,11 +1,11 @@
 import React from 'react'
 import Image from 'next/image'
 import { Github, Linkedin, Mail, Download } from 'lucide-react'
-import profileImage from '../assets/images/profile.png'
+import profileImage from '../assets/images/profile.jpg'
 
 const HeroSection: React.FC = () => {
   return (
-    <section className="min-h-screen flex items-center justify-center px-6 relative overflow-hidden">
+    <section className="h-screen flex items-center justify-center px-6 relative overflow-hidden snap-section">
       {/* Background floating programming language logos */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* React Logo */}
@@ -23,14 +23,9 @@ const HeroSection: React.FC = () => {
           <div className="text-xl font-bold text-yellow-400">JS</div>
         </div>
         
-        {/* Node.js Logo */}
-        <div className="absolute bottom-40 right-32 w-22 h-22 glass-card rounded-xl floating-delayed opacity-30 flex items-center justify-center">
-          <div className="text-sm font-bold text-green-400">1337</div>
-        </div>
-        
-        {/* Python Logo */}
-        <div className="absolute top-1/2 right-10 w-26 h-26 glass-card rounded-xl floating-animation opacity-25 flex items-center justify-center">
-          <div className="text-lg font-bold text-blue-300">PY</div>
+        {/* JavaScript Logo */}
+        <div className="absolute bottom-32 left-3/4 w-28 h-28 glass-card rounded-xl floating-animation opacity-35 flex items-center justify-center">
+          <div className="text-xl font-bold text-blue-400">Python</div>
         </div>
       </div>
 
@@ -50,10 +45,10 @@ const HeroSection: React.FC = () => {
 
         {/* Name and Title */}
         <h1 className="text-5xl md:text-7xl font-bold mb-4 glow-text fade-in-up">
-          Do Phu Trong
+          Hoang Nguyen
         </h1>
         <h2 className="text-2xl md:text-3xl text-muted-foreground mb-6 fade-in-up" style={{ animationDelay: '200ms' }}>
-          Full Stack Developer
+          Full-stack Developer
         </h2>
         
         {/* Description */}
@@ -64,23 +59,27 @@ const HeroSection: React.FC = () => {
 
         {/* Social Links */}
         <div className="flex justify-center space-x-4 mb-8 fade-in-up" style={{ animationDelay: '600ms' }}>
-          <a href="#" className="glass-card glass-hover rounded-xl p-3">
+          <a href="https://github.com/hoangngxn" target="_blank" className="glass-card glass-hover rounded-xl p-3">
             <Github className="w-6 h-6 text-foreground" />
           </a>
-          <a href="#" className="glass-card glass-hover rounded-xl p-3">
+          <a href="https://www.linkedin.com/in/hoang-nguyen-2012a3184/" target="_blank" className="glass-card glass-hover rounded-xl p-3">
             <Linkedin className="w-6 h-6 text-foreground" />
           </a>
-          <a href="#" className="glass-card glass-hover rounded-xl p-3">
+          <a href="hoangngn1337@gmail.com" target="_blank" className="glass-card glass-hover rounded-xl p-3">
             <Mail className="w-6 h-6 text-foreground" />
           </a>
         </div>
 
         {/* CTA Button */}
         <div className="fade-in-up" style={{ animationDelay: '800ms' }}>
-          <button className="glass-card glass-hover rounded-xl px-8 py-4 text-foreground font-semibold flex items-center mx-auto space-x-2">
+          <a 
+            href="/CV.pdf" 
+            download
+            className="glass-card glass-hover rounded-xl px-8 py-4 text-foreground font-semibold inline-flex items-center space-x-2"
+          >
             <Download className="w-5 h-5" />
             <span>Download Resume</span>
-          </button>
+          </a>
         </div>
       </div>
     </section>

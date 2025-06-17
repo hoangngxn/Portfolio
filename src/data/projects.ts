@@ -17,134 +17,128 @@ export interface Project {
 
 export const projects: Project[] = [
   {
-    title: "MeoStationery - E-Commerce Web App",
-    description:
-      "A full-stack e-commerce platform built with Next.js, Node.js, Prisma and PostgreSQL. Features include real-time inventory management, payment processing, and admin dashboard.",
-    technologies: ["Next.js", "Node.js", "PostgreSQL", "Tembo.io", "Prisma"],
-    githubUrl: "https://github.com/Goatt69/meo_stationery",
-    liveUrl: "https://meostationery.netlify.app/",
+    title: "Reasoning Chains - RAG AI Chatbot",
+    description: "An AI-powered chatbot designed to answer user queries using structured reasoning chains and packed with Retrieval Augmented Generation. Mimicking the thinking steps alongside with retrieving provided documents to make better response.",
+    technologies: ["React.js", "Flask", "Chainlit", "LangChains", "Docker"],
+    githubUrl: "https://github.com/hoangngxn/reasoning_chains_chatbot",
     type: "fullstack",
-    slug: "meo-stationery",
-    featuredImage: "/projects/meo-stationery/featured.jpg",
-    details: `MeoStationery is a comprehensive e-commerce platform designed for stationery products. 
-    The platform features a modern, responsive design and robust backend infrastructure.
-    
-    Key technical achievements include:
-    - Implemented real-time inventory management system
-    - Integrated secure payment processing
-    - Developed an intuitive admin dashboard
-    - Created a scalable database architecture using PostgreSQL
-    - Built RESTful APIs with Node.js and Express`,
-    features: [
-      "Real-time inventory tracking and management",
-      "Secure payment processing integration in VNPAY",
-      "Admin dashboard with analytics and reporting",
-      "User authentication and authorization",
-      "Responsive design for all devices",
-      "Product search and filtering",
-      "Shopping cart and wishlist functionality"
-    ],
-    gallery: [
-      "/projects/meo-stationery/gallery-1.jpg",
-      "/projects/meo-stationery/gallery-2.jpg",
-      "/projects/meo-stationery/gallery-3.jpg"
-    ],
-    // demoVideo: "https://www.youtube.com/embed/your-video-id"
-  },
-  {
-    title: "Deadlock ESP - Game Cheating Software",
-    description: "A cheat software built mainly in Rust and C#",
-    technologies: ["C++", "C#", ".NET", "Rust"],
-    githubUrl: "https://github.com/y0shih/deadlock-cheese",
-    type: "software",
-    slug: "deadlock-esp",
-    featuredImage: "/projects/deadlock-esp/featured.jpg",
-    details: `Deadlock ESP is a game enhancement tool developed using Rust and C#. 
-    The project demonstrates advanced memory manipulation and game engine interaction techniques.
+    slug: "reasoning-chains",
+    featuredImage: "/projects/reasoning-chains/RC2.png",
+    details: `A sophisticated AI chatbot that combines structured reasoning with RAG capabilities.
+    The system demonstrates advanced natural language processing and document retrieval techniques.
     
     Technical highlights:
-    - Low-level memory management and manipulation
-    - Real-time game data processing
-    - Custom rendering engine integration
-    - Performance optimization for minimal impact`,
+    - Implemented reasoning chains for step-by-step problem solving
+    - Integrated RAG for context-aware responses
+    - Built scalable backend with Flask
+    - Containerized deployment with Docker
+    - Real-time document processing and retrieval`,
     features: [
-      "Real-time game data processing",
-      "Custom rendering engine",
-      "Memory manipulation and injection",
-      "Performance optimization",
-      "Anti-detection mechanisms"
+      "Structured reasoning chains",
+      "Document retrieval and processing",
+      "Context-aware responses",
+      "Real-time query processing",
+      "Scalable architecture",
+      "Docker containerization",
+      "Interactive chat interface"
     ],
     gallery: [
-      "/projects/deadlock-esp/gallery-1.jpg",
-      "/projects/deadlock-esp/gallery-2.jpg"
+      "/projects/reasoning-chains/RC.png",
+      "/projects/reasoning-chains/RC3.png"
     ]
   },
   {
-    title: "WyA - Real-time Location Chatting Platform",
-    description:
-      "WyA is a real-time location-based chat app where users can join nearby chat rooms. Built with Ionic React, TypeScript, Nodejs with smooth animations powered by Framer Motion.",
-    technologies: ["Ionic React", "TypeScript", "Nodejs", "Firebase"],
-    githubUrlFE: "https://github.com/duy08k4/WyA_Frontend",
-    githubUrlBE: "https://github.com/duy08k4/WyA_Backend",
-    liveUrl: "https://wy-a-introduction.vercel.app/",
-    type: "web-app",
-    slug: "wya-chat",
-    featuredImage: "/projects/wya-chat/featured.jpg",
-    details: `WyA is an innovative location-based chat application that connects users in real-time based on their geographical proximity.
-    The platform combines modern web technologies with real-time communication features.
+    title: "TutorHub",
+    description: "A modern React application for connecting tutors and students. This platform allows tutors to create and manage tutoring posts, while students can browse available tutors, book sessions, and leave reviews.",
+    technologies: ["React.js", "Java Spring Boot", "Docker"],
+    githubUrlFE: "https://github.com/hoangngxn/tutorhub",
+    githubUrlBE: "https://github.com/hoangngxn/tutorhub_be",
+    type: "fullstack",
+    slug: "tutorhub",
+    featuredImage: "/projects/tutorhub/featured.png",
+    details: `A comprehensive tutoring platform that connects students with qualified tutors.
+    Built with modern web technologies and robust backend architecture.
     
     Technical implementation:
-    - Real-time location tracking and updates
-    - Fully functional chat system
-    - Geolocation services integration
-    - Responsive mobile-first design
-    - Real-time user presence system`,
+    - Real-time booking system
+    - User authentication and profiles
+    - Review and rating system
+    - Search and filtering capabilities
+    - Responsive design`,
     features: [
-      "Real-time location-based chat rooms",
-      "Geolocation services integration",
-      "Real-time user presence",
-      "Smooth animations and transitions",
-      "Mobile-first responsive design",
-      "Push notifications",
-      "User authentication and profiles"
+      "Tutor-student matching",
+      "Session booking system",
+      "Review and rating system",
+      "Search and filtering",
+      "User profiles",
+      "Real-time notifications",
+      "Payment integration"
     ],
     gallery: [
-      "/projects/wya-chat/gallery-1.jpg",
-      "/projects/wya-chat/gallery-2.jpg",
-      "/projects/wya-chat/gallery-3.jpg"
-    ],
-    demoVideo: "https://www.youtube.com/embed/your-video-id"
+      "/projects/tutorhub/TutorHub.png",
+      "/projects/tutorhub/TutorHub2.png"
+    ]
   },
   {
-    title: "Portfolio Website",
-    description:
-      "A modern portfolio website showcasing projects and skills. Built with Next.js and Tailwind CSS, featuring smooth animations and responsive design.",
-    technologies: ["Next.js", "TypeScript", "Tailwind CSS", "Framer Motion"],
-    liveUrl: "https://nextjs-portfolio-u735.vercel.app/",
+    title: "Melodies",
+    description: "A full-featured music streaming application that allows users to browse, play, and manage a wide selection of songs in a sleek, responsive interface. It supports real-time audio playback, user authentication, and playlist creation.",
+    technologies: ["React Native", "Gradle"],
+    githubUrl: "https://github.com/hoangngxn/melodies",
     type: "web-app",
-    slug: "portfolio",
-    featuredImage: "/projects/portfolio/featured.jpg",
-    details: `A modern, responsive portfolio website built with Next.js and Tailwind CSS.
-    The site features smooth animations, dark mode support, and a clean, professional design.
+    slug: "melodies",
+    featuredImage: "/projects/melodies/melodies.png",
+    details: `A modern music streaming platform built with React Native, offering a seamless mobile experience.
+    The app combines elegant design with powerful functionality.
     
     Key features:
-    - Server-side rendering with Next.js
-    - Responsive design with Tailwind CSS
-    - Smooth animations with Framer Motion
-    - Dark mode support
-    - SEO optimization`,
+    - Real-time audio streaming
+    - User authentication and profiles
+    - Playlist management
+    - Offline mode support
+    - Responsive design`,
     features: [
+      "Real-time audio playback",
+      "User authentication",
+      "Playlist creation and management",
+      "Offline mode",
       "Responsive design",
-      "Dark mode support",
-      "Smooth animations",
-      "Project showcase",
-      "Contact form",
-      "SEO optimization",
-      "Performance optimized"
+      "Music library browsing",
+      "Search functionality"
     ],
     gallery: [
-      "/projects/portfolio/gallery-1.jpg",
-      "/projects/portfolio/gallery-2.jpg"
+      "/projects/melodies/melodies2.png",
+      "/projects/melodies/melodies3.png"
+    ]
+  },
+  {
+    title: "Valthrun",
+    description: "A personal project of Counter Strike 2 external game exploit/enhancer, with built-in Kernel level driver for memory reading/writing. Integrated an Aim-assist logic systems involving mouse movement and smoothness.",
+    technologies: ["Rust Nightly", "Cargo", "Windows APIs"],
+    githubUrl: "https://github.com/hoangngxn/valthrun",
+    type: "software",
+    slug: "valthrun",
+    featuredImage: "/projects/valthrun/showcase_01.png",
+    details: `An advanced game enhancement tool developed using Rust and Windows APIs.
+    The project demonstrates sophisticated memory manipulation and input processing techniques.
+    
+    Technical highlights:
+    - Kernel-level memory operations
+    - Custom aim-assist algorithms
+    - Mouse movement optimization
+    - Anti-detection mechanisms
+    - Performance optimization`,
+    features: [
+      "Kernel-level memory operations",
+      "Custom aim-assist system",
+      "Mouse movement optimization",
+      "Anti-detection mechanisms",
+      "Performance optimization",
+      "Real-time data processing",
+      "Configurable settings"
+    ],
+    gallery: [
+      "/projects/valthrun/showcase_01.png",
+      "/projects/valthrun/showcase_02.png"
     ]
   }
 ]; 

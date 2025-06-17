@@ -39,7 +39,7 @@ const ProjectsSection: React.FC = () => {
   };
 
   return (
-    <section className="py-24 px-6">
+    <section id="projects" className="h-screen flex items-center justify-center py-24 px-6 snap-section">
       <div className="max-w-6xl mx-auto">
         {/* Section Header */}
         <div className="text-center mb-16">
@@ -82,12 +82,12 @@ const ProjectsSection: React.FC = () => {
                         </button>
                         
                         {activeDropdown === project.title && (
-                          <div className="absolute right-0 mt-2 w-48 glass-card rounded-lg shadow-lg z-10 overflow-hidden">
+                          <div className="absolute right-0 mt-2 w-48 bg-background/95 backdrop-blur-sm rounded-lg shadow-lg z-10 overflow-hidden border border-primary/20">
                             <a
                               href={project.githubUrlFE}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="block px-4 py-2 text-sm text-foreground hover:bg-primary/10 transition-colors"
+                              className="block px-4 py-2 text-sm text-foreground hover:bg-primary/20 transition-colors"
                               onClick={(e) => e.stopPropagation()}
                             >
                               Front-end Repository
@@ -96,7 +96,7 @@ const ProjectsSection: React.FC = () => {
                               href={project.githubUrlBE}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="block px-4 py-2 text-sm text-foreground hover:bg-primary/10 transition-colors border-t border-primary/10"
+                              className="block px-4 py-2 text-sm text-foreground hover:bg-primary/20 transition-colors border-t border-primary/20"
                               onClick={(e) => e.stopPropagation()}
                             >
                               Back-end Repository
@@ -154,7 +154,7 @@ const ProjectsSection: React.FC = () => {
         {/* Call to Action */}
         <div className="mt-16 text-center">
           <a
-            href="https://github.com/y0shih"
+            href="https://github.com/hoangngxn"
             target="_blank"
             rel="noopener noreferrer"
             className="glass-card glass-hover rounded-lg px-6 py-3 text-foreground font-semibold inline-flex items-center space-x-2"

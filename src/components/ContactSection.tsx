@@ -11,7 +11,7 @@ const ContactSection: React.FC = () => {
   }
 
   return (
-    <section className="py-24 px-6">
+    <section className="h-screen flex items-center justify-center py-24 px-6 snap-section">
       <div className="max-w-4xl mx-auto">
         {/* Section Header */}
         <div className="text-center mb-16">
@@ -30,7 +30,7 @@ const ContactSection: React.FC = () => {
               </div>
               <div>
                 <h3 className="font-semibold text-foreground">Email</h3>
-                <p className="text-muted-foreground">trongh133@gmail.com</p>
+                <p className="text-muted-foreground">hoangngn1337@gmail.com</p>
               </div>
             </div>
 
@@ -40,7 +40,7 @@ const ContactSection: React.FC = () => {
               </div>
               <div>
                 <h3 className="font-semibold text-foreground">Phone</h3>
-                <p className="text-muted-foreground">+84 344 427 301</p>
+                <p className="text-muted-foreground">+84 357 135 934</p>
               </div>
             </div>
 
@@ -50,7 +50,7 @@ const ContactSection: React.FC = () => {
               </div>
               <div>
                 <h3 className="font-semibold text-foreground">Location</h3>
-                <p className="text-muted-foreground">Ho Chi Minh City, Vietnam</p>
+                <p className="text-muted-foreground">Da Nang, Vietnam</p>
               </div>
             </div>
           </div>
