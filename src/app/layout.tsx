@@ -5,6 +5,7 @@ import MediaPlayer from "@/components/MediaPlayer"
 export const metadata = {
   title: 'hoang.dev',
   description: 'hoang.dev',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
   icons: {
     icon: [
       { url: '/favicon/favicon.ico' },
@@ -26,7 +27,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+      </head>
+      <body className="min-h-screen">
         <Providers>
           {children}
           <MediaPlayer />
