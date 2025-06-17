@@ -17,6 +17,39 @@ export interface Project {
 
 export const projects: Project[] = [
   {
+    title: "Personal Portfolio",
+    description: "A modern, interactive portfolio website showcasing my work as a Full-stack Developer. Features a sleek glass-morphism design with smooth animations, interactive elements, and a dynamic project showcase.",
+    technologies: ["Next.js", "TypeScript", "Tailwind CSS", "Radix UI", "React Query"],
+    githubUrl: "https://github.com/hoangngxn/portfolio",
+    type: "web-app",
+    slug: "portfolio",
+    featuredImage: "/projects/portfolio/portfolio.png",
+    details: `A sophisticated portfolio website built with modern web technologies.
+    The project demonstrates advanced frontend development techniques and interactive design.
+    
+    Technical highlights:
+    - Glass-morphism UI with smooth animations
+    - Interactive bouncing tech stack logos
+    - Smooth scroll snap navigation
+    - Responsive design with mobile optimization
+    - Dynamic project showcase with galleries
+    - Background music integration
+    - Custom animations and transitions`,
+    features: [
+      "Glass-morphism design system",
+      "Interactive bouncing logos",
+      "Smooth scroll navigation",
+      "Project showcase gallery",
+      "Background music player",
+      "Responsive layout",
+      "Dark theme with glowing accents"
+    ],
+    gallery: [
+      "/projects/portfolio/portfolio.png",
+      "/projects/portfolio/portfolio2.png"
+    ]
+  },
+  {
     title: "Reasoning Chains - RAG AI Chatbot",
     description: "An AI-powered chatbot designed to answer user queries using structured reasoning chains and packed with Retrieval Augmented Generation. Mimicking the thinking steps alongside with retrieving provided documents to make better response.",
     technologies: ["React.js", "Flask", "Chainlit", "LangChains", "Docker"],
