@@ -88,7 +88,7 @@ export const projects: Project[] = [
     githubUrlBE: "https://github.com/hoangngxn/tutorhub_be",
     type: "fullstack",
     slug: "tutorhub",
-    featuredImage: "/projects/tutorhub/TutorHub1.png",
+    featuredImage: "/projects/tutorhub/Tutor1.png",
     details: `A comprehensive tutoring platform that connects students with qualified tutors.
     Built with modern web technologies and robust backend architecture.
     
@@ -108,8 +108,8 @@ export const projects: Project[] = [
       "Payment integration"
     ],
     gallery: [
-      "/projects/tutorhub/TutorHub2.png",
-      "/projects/tutorhub/TutorHub3.png"
+      "/projects/tutorhub/Tutor2.png",
+      "/projects/tutorhub/Tutor3.png"
     ]
   },
   {

@@ -25,7 +25,7 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({
         </div>
         <h3 className="text-xl font-semibold text-foreground">{title}</h3>
       </div>
-      <p className="text-muted-foreground leading-relaxed">{description}</p>
+      <p className="text-muted-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: description }} />
     </div>
   )
 }

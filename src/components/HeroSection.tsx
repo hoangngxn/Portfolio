@@ -1,8 +1,24 @@
 import React from 'react'
 import Image from 'next/image'
-import { Github, Linkedin, Mail, Download } from 'lucide-react'
+import { Github, Linkedin, Mail, Download, Facebook, Youtube } from 'lucide-react'
 import profileImage from '../assets/images/profile.jpg'
 import BouncingLogos from './bouncing-logos/BouncingLogos'
+import ClickCounter from './click-counter/ClickCounter'
+
+const KILL_STREAKS = {
+  20: "DOUBLE KILL!",
+  40: "TRIPLE KILL!",
+  60: "ULTRA KILL!",
+  80: "RAMPAGE!",
+  100: "KILLING SPREE!",
+  120: "DOMINATING!",
+  140: "MEGA KILL!",
+  160: "UNSTOPPABLE!",
+  180: "WICKED SICK!",
+  200: "MONSTER KILL!",
+  220: "GODLIKE!",
+  240: "BEYOND GODLIKE!",
+};
 
 const HeroSection: React.FC = () => {
   return (
@@ -13,6 +29,7 @@ const HeroSection: React.FC = () => {
       backgroundRepeat: 'no-repeat'
     }}>
       <BouncingLogos />
+      <ClickCounter />
 
       <div className="max-w-4xl mx-auto text-center relative z-10 glass-card rounded-2xl p-8 backdrop-blur-sm">
         {/* Profile Image */}
@@ -50,8 +67,11 @@ const HeroSection: React.FC = () => {
           <a href="https://www.linkedin.com/in/hoang-nguyen-2012a3184/" target="_blank" className="glass-card glass-hover rounded-xl p-3">
             <Linkedin className="w-6 h-6 text-foreground" />
           </a>
-          <a href="hoangngn1337@gmail.com" target="_blank" className="glass-card glass-hover rounded-xl p-3">
-            <Mail className="w-6 h-6 text-foreground" />
+          <a href="https://www.facebook.com/hoang.ngxn/" target="_blank" className="glass-card glass-hover rounded-xl p-3">
+            <Facebook className="w-6 h-6 text-foreground" />
+          </a>
+          <a href="https://www.youtube.com/channel/UC3dOp0q4eT7L3TvI5R8P4Iw" target="_blank" className="glass-card glass-hover rounded-xl p-3">
+            <Youtube className="w-6 h-6 text-foreground" />
           </a>
         </div>
       </div>

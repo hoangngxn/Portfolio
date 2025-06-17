@@ -7,7 +7,7 @@ const AboutSection: React.FC = () => {
     {
       icon: Code,
       title: "Development",
-      description: "Proficient in React, TypeScript, Node.js, and modern web technologies. Building scalable applications with clean, maintainable code."
+      description: "Proficient in <strong>React</strong>, <strong>TypeScript</strong>, <strong>Java</strong>, <strong>Python</strong> and modern development technologies. Building scalable applications with clean, maintainable code."
     },
     {
       icon: Database,
