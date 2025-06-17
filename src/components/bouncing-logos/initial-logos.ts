@@ -4,7 +4,7 @@ import { Logo } from './types';
 const getRandomCoordinates = (isMobile: boolean) => {
   const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1920;
   const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 1080;
-  const logoSize = isMobile ? 48 : 96;
+  const logoSize = isMobile ? 48 : 64;
   
   // Ensure logos spawn within visible bounds, accounting for logo size
   const maxX = screenWidth - logoSize;
@@ -24,7 +24,7 @@ const getRandomDirection = () => {
 // Function to generate initial logos with responsive coordinates
 const generateInitialLogos = (): Logo[] => {
   const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
-  const logoSize = isMobile ? 48 : 96;
+  const logoSize = isMobile ? 48 : 64;
   
   return [
     {
@@ -33,7 +33,7 @@ const generateInitialLogos = (): Logo[] => {
       alt: 'React Logo',
       width: logoSize,
       height: logoSize,
-      className: isMobile ? 'w-8 h-8' : 'w-14 h-14',
+      className: isMobile ? 'w-6 h-6' : 'w-10 h-10',
       dx: getRandomDirection(),
       dy: getRandomDirection(),
       ...getRandomCoordinates(isMobile)
@@ -44,7 +44,7 @@ const generateInitialLogos = (): Logo[] => {
       alt: 'TypeScript Logo',
       width: logoSize,
       height: logoSize,
-      className: isMobile ? 'w-8 h-8' : 'w-14 h-14',
+      className: isMobile ? 'w-6 h-6' : 'w-10 h-10',
       dx: getRandomDirection(),
       dy: getRandomDirection(),
       ...getRandomCoordinates(isMobile)
@@ -55,7 +55,7 @@ const generateInitialLogos = (): Logo[] => {
       alt: 'JavaScript Logo',
       width: logoSize,
       height: logoSize,
-      className: isMobile ? 'w-8 h-8' : 'w-12 h-12',
+      className: isMobile ? 'w-4 h-4' : 'w-8 h-8',
       dx: getRandomDirection(),
       dy: getRandomDirection(),
       ...getRandomCoordinates(isMobile)
@@ -66,7 +66,7 @@ const generateInitialLogos = (): Logo[] => {
       alt: 'Java Logo',
       width: logoSize,
       height: logoSize,
-      className: isMobile ? 'w-8 h-8' : 'w-16 h-16',
+      className: isMobile ? 'w-6 h-6' : 'w-10 h-10',
       dx: getRandomDirection(),
       dy: getRandomDirection(),
       ...getRandomCoordinates(isMobile)
@@ -77,7 +77,7 @@ const generateInitialLogos = (): Logo[] => {
       alt: 'Python Logo',
       width: logoSize,
       height: logoSize,
-      className: isMobile ? 'w-8 h-8' : 'w-16 h-16',
+      className: isMobile ? 'w-6 h-6' : 'w-10 h-10',
       dx: getRandomDirection(),
       dy: getRandomDirection(),
       ...getRandomCoordinates(isMobile)
@@ -88,7 +88,7 @@ const generateInitialLogos = (): Logo[] => {
       alt: 'Rust Logo',
       width: logoSize,
       height: logoSize,
-      className: isMobile ? 'w-8 h-8' : 'w-16 h-16',
+      className: isMobile ? 'w-6 h-6' : 'w-10 h-10',
       dx: getRandomDirection(),
       dy: getRandomDirection(),
       ...getRandomCoordinates(isMobile)
@@ -99,7 +99,7 @@ const generateInitialLogos = (): Logo[] => {
       alt: 'CSS3 Logo',
       width: logoSize,
       height: logoSize,
-      className: isMobile ? 'w-8 h-8' : 'w-16 h-16',
+      className: isMobile ? 'w-6 h-6' : 'w-10 h-10',
       dx: getRandomDirection(),
       dy: getRandomDirection(),
       ...getRandomCoordinates(isMobile)
@@ -110,7 +110,7 @@ const generateInitialLogos = (): Logo[] => {
       alt: 'HTML5 Logo',
       width: logoSize,
       height: logoSize,
-      className: isMobile ? 'w-8 h-8' : 'w-16 h-16',
+      className: isMobile ? 'w-6 h-6' : 'w-10 h-10',
       dx: getRandomDirection(),
       dy: getRandomDirection(),
       ...getRandomCoordinates(isMobile)

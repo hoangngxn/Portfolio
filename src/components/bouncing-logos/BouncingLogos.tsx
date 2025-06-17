@@ -32,7 +32,7 @@ const BouncingLogos: React.FC = () => {
 
           // Get the current logo size based on screen width
           const isMobile = window.innerWidth < 768;
-          const logoSize = isMobile ? 48 : 96; // 48px for mobile, 96px for desktop
+          const logoSize = isMobile ? 48 : 64; // Reduced from 48/96 to 32/64
 
           // Boundary checks with responsive size
           if (newX <= 0 || newX >= container.clientWidth - logoSize) {
@@ -79,7 +79,7 @@ const BouncingLogos: React.FC = () => {
           key={logo.id}
           id={logo.id}
           className="absolute glass-card rounded-xl opacity-80 flex items-center justify-center
-            w-12 h-12 md:w-24 md:h-24" // Responsive size: 48px on mobile, 96px on desktop
+            w-8 h-8 md:w-16 md:h-16" // Reduced from w-12/w-24 to w-8/w-16
           style={{
             transform: `translate(${logo.x}px, ${logo.y}px)`,
             transition: 'transform 16ms linear'
@@ -90,7 +90,7 @@ const BouncingLogos: React.FC = () => {
             alt={logo.alt}
             width={logo.width}
             height={logo.height}
-            className="w-8 h-8 md:w-14 md:h-14" // Responsive image size
+            className="w-6 h-6 md:w-10 md:h-10" // Reduced from w-8/w-14 to w-6/w-10
           />
         </div>
       ))}
