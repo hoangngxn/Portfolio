@@ -54,18 +54,6 @@ const HeroSection: React.FC = () => {
             <Mail className="w-6 h-6 text-foreground" />
           </a>
         </div>
-
-        {/* CTA Button */}
-        <div className="fade-in-up" style={{ animationDelay: '800ms' }}>
-          <a 
-            href="/documents/CV.pdf" 
-            download
-            className="glass-card glass-hover rounded-xl px-8 py-4 text-foreground font-semibold inline-flex items-center space-x-2"
-          >
-            <Download className="w-5 h-5" />
-            <span>Download Resume</span>
-          </a>
-        </div>
       </div>
     </section>
   )
