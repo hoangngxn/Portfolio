@@ -113,37 +113,6 @@ export const projects: Project[] = [
     ]
   },
   {
-    title: "Melodies",
-    description: "A full-featured music streaming application that allows users to browse, play, and manage a wide selection of songs in a sleek, responsive interface. It supports real-time audio playback, user authentication, and playlist creation.",
-    technologies: ["React Native", "Gradle"],
-    githubUrl: "https://github.com/hoangngxn/melodies",
-    type: "web-app",
-    slug: "melodies",
-    featuredImage: "/projects/melodies/melodies.png",
-    details: `A modern music streaming platform built with React Native, offering a seamless mobile experience.
-    The app combines elegant design with powerful functionality.
-    
-    Key features:
-    - Real-time audio streaming
-    - User authentication and profiles
-    - Playlist management
-    - Offline mode support
-    - Responsive design`,
-    features: [
-      "Real-time audio playback",
-      "User authentication",
-      "Playlist creation and management",
-      "Offline mode",
-      "Responsive design",
-      "Music library browsing",
-      "Search functionality"
-    ],
-    gallery: [
-      "/projects/melodies/melodies2.png",
-      "/projects/melodies/melodies3.png"
-    ]
-  },
-  {
     title: "Valthrun",
     description: "A personal project of Counter Strike 2 external game exploit/enhancer, with built-in Kernel level driver for memory reading/writing. Integrated an Aim-assist logic systems involving mouse movement and smoothness.",
     technologies: ["Rust Nightly", "Cargo", "Windows APIs"],
