@@ -4,10 +4,15 @@ export class ImageLoader {
   private static loadPromise: Promise<void> | null = null;
 
   static async loadImages() {
+    // Check if we're in a browser environment
+    if (typeof window === 'undefined') {
+      throw new Error('ImageLoader can only be used in browser environment');
+    }
+
     if (this.loaded) return Promise.resolve();
     if (this.loadPromise) return this.loadPromise;
 
-    this.loadPromise = new Promise((resolve) => {
+    this.loadPromise = new Promise((resolve, reject) => {
       const imageFiles = {
         background: '/images/background-night.png',
         base: '/images/base.png',
@@ -32,6 +37,7 @@ export class ImageLoader {
       };
 
       let loadedCount = 0;
+      let errorCount = 0;
       const totalImages = Object.keys(imageFiles).length;
 
       const onLoad = () => {
@@ -42,10 +48,29 @@ export class ImageLoader {
         }
       };
 
+      const onError = (key: string, error: Event | string) => {
+        console.error(`Failed to load image: ${key}`, error);
+        errorCount++;
+        loadedCount++;
+        
+        // If all images have been processed (success or error), resolve
+        if (loadedCount === totalImages) {
+          if (errorCount === totalImages) {
+            // All images failed
+            reject(new Error('Failed to load all game images'));
+          } else {
+            // Some images loaded successfully
+            this.loaded = true;
+            resolve();
+          }
+        }
+      };
+
       for (const [key, src] of Object.entries(imageFiles)) {
         const img = new Image();
         img.src = src;
         img.onload = onLoad;
+        img.onerror = (error) => onError(key, error);
         this.images[key] = img;
       }
     });
@@ -53,7 +78,7 @@ export class ImageLoader {
     return this.loadPromise;
   }
 
-  static getImage(key: string): HTMLImageElement {
-    return this.images[key];
+  static getImage(key: string): HTMLImageElement | null {
+    return this.images[key] || null;
   }
 } 

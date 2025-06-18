@@ -13,24 +13,10 @@ export default function FlappyBird() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [gameState, setGameState] = useState<'playing' | 'dead'>('playing');
   const [score, setScore] = useState(0);
-  const [highScore, setHighScore] = useState(() => {
-    // Load high score from localStorage on component mount
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('flappyBirdHighScore');
-      console.log('Loading high score from localStorage:', saved);
-      return saved ? parseInt(saved, 10) : 0;
-    }
-    return 0;
-  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [highScore, setHighScore] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
-
-  // Save high score to localStorage whenever it changes
-  useEffect(() => {
-    if (typeof window !== 'undefined' && highScore > 0) {
-      console.log('Saving high score to localStorage:', highScore);
-      localStorage.setItem('flappyBirdHighScore', highScore.toString());
-    }
-  }, [highScore]);
 
   // Game objects
   const playerRef = useRef<Player | null>(null);
@@ -49,6 +35,34 @@ export default function FlappyBird() {
   const PIPE_SPAWN_INTERVAL = 1500; // Spawn a new pipe every 1.5 seconds
   const PIPE_START_DELAY = 2000; // Start spawning pipes 2 seconds after first flap
   const SCROLL_SPEED = 150; // pixels per second
+
+  // Load high score from localStorage safely
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('flappyBirdHighScore');
+        if (saved) {
+          const parsed = parseInt(saved, 10);
+          if (!isNaN(parsed)) {
+            setHighScore(parsed);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load high score from localStorage:', err);
+      }
+    }
+  }, []);
+
+  // Save high score to localStorage safely
+  useEffect(() => {
+    if (typeof window !== 'undefined' && highScore > 0) {
+      try {
+        localStorage.setItem('flappyBirdHighScore', highScore.toString());
+      } catch (err) {
+        console.warn('Failed to save high score to localStorage:', err);
+      }
+    }
+  }, [highScore]);
 
   const initGame = () => {
     if (!canvasRef.current) return;
@@ -216,42 +230,65 @@ export default function FlappyBird() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    // Set canvas dimensions
     canvas.width = CANVAS_WIDTH;
     canvas.height = CANVAS_HEIGHT;
 
-    // Load images and sounds before starting the game
-    Promise.all([
-      ImageLoader.loadImages(),
-      SoundLoader.loadSounds()
-    ]).then(() => {
-      // Initialize game immediately
-      initGame();
-      
-      // Add keyboard event listener
-      window.addEventListener('keydown', handleInput);
-      
-      // Add click event listener to canvas
-      canvas.addEventListener('click', handleClick);
+    // Initialize game with proper error handling
+    const initializeGame = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
 
-      // Start game loop
-      lastPipeSpawnTime.current = performance.now();
-      animationFrameRef.current = requestAnimationFrame(gameLoop);
-    }).catch(error => {
-      console.error('Error loading game assets:', error);
-    });
+        // Load images and sounds before starting the game
+        await Promise.all([
+          ImageLoader.loadImages(),
+          SoundLoader.loadSounds()
+        ]);
+
+        // Initialize game immediately
+        initGame();
+        
+        // Add keyboard event listener
+        window.addEventListener('keydown', handleInput);
+        
+        // Add click event listener to canvas
+        canvas.addEventListener('click', handleClick);
+
+        // Start game loop
+        lastPipeSpawnTime.current = performance.now();
+        animationFrameRef.current = requestAnimationFrame(gameLoop);
+        
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error initializing game:', error);
+        setError('Failed to load game assets. Please refresh the page.');
+        setIsLoading(false);
+      }
+    };
+
+    // Only initialize if we're in the browser
+    if (typeof window !== 'undefined') {
+      initializeGame();
+    }
 
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-      // Clean up event listener
-      window.removeEventListener('keydown', handleInput);
-      // Clean up click event listener
-      if (canvas) {
-        canvas.removeEventListener('click', handleClick);
+      // Clean up event listeners
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('keydown', handleInput);
+        if (canvas) {
+          canvas.removeEventListener('click', handleClick);
+        }
       }
       // Clean up sounds
-      SoundLoader.cleanup();
+      try {
+        SoundLoader.cleanup();
+      } catch (err) {
+        console.warn('Error cleaning up sounds:', err);
+      }
     };
   }, []);
 
@@ -267,10 +304,37 @@ export default function FlappyBird() {
           className="rounded-lg border-4 border-white"
           tabIndex={0}
         />
+        
+        {/* Loading State */}
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
+            <div className="glass-card rounded-lg p-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+              <p className="text-white text-sm">Loading game...</p>
+            </div>
+          </div>
+        )}
+        
+        {/* Error State */}
+        {error && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
+            <div className="glass-card rounded-lg p-4 max-w-sm text-center">
+              <p className="text-red-400 text-sm mb-2">Error</p>
+              <p className="text-white text-xs mb-3">{error}</p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs"
+              >
+                Refresh Page
+              </button>
+            </div>
+          </div>
+        )}
+        
         {/* Score UI using digit images - hidden during death screen */}
-        {hasStarted && gameState !== 'dead' && <ScoreDisplay score={score} />}
+        {hasStarted && gameState !== 'dead' && !isLoading && !error && <ScoreDisplay score={score} />}
         {/* Death Screen */}
-        {gameState === 'dead' && (
+        {gameState === 'dead' && !isLoading && !error && (
           <DeathScreen score={score} highScore={highScore} />
         )}
       </div>

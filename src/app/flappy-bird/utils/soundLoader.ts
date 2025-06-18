@@ -18,6 +18,11 @@ export class SoundLoader {
   }
 
   static async loadSounds(): Promise<void> {
+    // Check if we're in a browser environment
+    if (typeof window === 'undefined') {
+      throw new Error('SoundLoader can only be used in browser environment');
+    }
+
     if (this.isLoaded) return;
 
     const soundFiles = [
@@ -28,22 +33,27 @@ export class SoundLoader {
 
     const loadPromises = soundFiles.map(({ name, path }) => {
       return new Promise<void>((resolve, reject) => {
-        const audio = new Audio(path);
-        audio.preload = 'auto';
-        audio.volume = this.volume; // Set initial volume
-        
-        audio.addEventListener('canplaythrough', () => {
-          this.sounds.set(name, audio);
-          resolve();
-        }, { once: true });
-        
-        audio.addEventListener('error', () => {
-          console.error(`Failed to load sound: ${name}`);
-          reject(new Error(`Failed to load sound: ${name}`));
-        }, { once: true });
-        
-        // Start loading
-        audio.load();
+        try {
+          const audio = new Audio(path);
+          audio.preload = 'auto';
+          audio.volume = this.volume; // Set initial volume
+          
+          audio.addEventListener('canplaythrough', () => {
+            this.sounds.set(name, audio);
+            resolve();
+          }, { once: true });
+          
+          audio.addEventListener('error', (error) => {
+            console.error(`Failed to load sound: ${name}`, error);
+            reject(new Error(`Failed to load sound: ${name}`));
+          }, { once: true });
+          
+          // Start loading
+          audio.load();
+        } catch (error) {
+          console.error(`Error creating audio element for ${name}:`, error);
+          reject(new Error(`Failed to create audio element for ${name}`));
+        }
       });
     });
 
@@ -53,18 +63,25 @@ export class SoundLoader {
       console.log('All sounds loaded successfully');
     } catch (error) {
       console.error('Error loading sounds:', error);
-      throw error;
+      // Don't throw error, just log it and continue
+      this.isLoaded = true; // Mark as loaded to prevent infinite retries
     }
   }
 
   static playSound(soundName: string): void {
+    if (typeof window === 'undefined') return;
+    
     const sound = this.sounds.get(soundName);
     if (sound) {
-      sound.currentTime = 0;
-      sound.volume = this.volume; // Ensure volume is set before playing
-      sound.play().catch(err => {
-        console.log(`Error playing ${soundName} sound:`, err);
-      });
+      try {
+        sound.currentTime = 0;
+        sound.volume = this.volume; // Ensure volume is set before playing
+        sound.play().catch(err => {
+          console.log(`Error playing ${soundName} sound:`, err);
+        });
+      } catch (error) {
+        console.warn(`Error playing sound ${soundName}:`, error);
+      }
     } else {
       console.warn(`Sound '${soundName}' not found`);
     }
@@ -79,7 +96,11 @@ export class SoundLoader {
   }
 
   static cleanup(): void {
-    this.sounds.clear();
-    this.isLoaded = false;
+    try {
+      this.sounds.clear();
+      this.isLoaded = false;
+    } catch (error) {
+      console.warn('Error cleaning up sounds:', error);
+    }
   }
 } 
