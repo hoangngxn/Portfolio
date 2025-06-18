@@ -20,7 +20,7 @@ const BouncingLogos: React.FC = () => {
       const saved = localStorage.getItem('bouncingLogos-muted');
       return saved !== null ? saved === 'true' : false;
     }
-    return false;
+    return true;
   });
   const { cursor, cursorRef, mouseVelocityRef } = useMouseVelocity(containerRef);
   const speedMultiplier = 1; // Slows down the overall movement
@@ -48,8 +48,8 @@ const BouncingLogos: React.FC = () => {
     const container = containerRef.current;
     let animationFrameId: number;
 
-    const resistance = 0.99999; // friction per frame
-    const bounciness = 0.99999; // energy loss on collision
+    const resistance = 0.998; // friction per frame
+    const bounciness = 0.998; // energy loss on collision
 
     const animate = () => {
       if (isPaused) return;
