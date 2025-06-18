@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Player } from './components/Player';
 import { Pipe } from './components/Pipe';
 import { ImageLoader } from './utils/imageLoader';
+import { SoundLoader } from './utils/soundLoader';
 import { ScoreDisplay } from './components/ScoreDisplay';
 
 export default function FlappyBird() {
@@ -76,6 +77,9 @@ export default function FlappyBird() {
           setHasStarted(true);
         }
         playerRef.current.jump();
+        
+        // Play wing sound
+        SoundLoader.playSound('wing');
       }
     } else {
       // Restart game when player presses space after death
@@ -89,6 +93,9 @@ export default function FlappyBird() {
     if (playerRef.current) {
       playerRef.current.setDead(true);
     }
+    
+    // Play hit sound
+    SoundLoader.playSound('hit');
     
     // Save high score to localStorage if current score is higher
     const finalScore = currentScoreRef.current;
@@ -162,13 +169,16 @@ export default function FlappyBird() {
       pipe.draw(ctx);
 
       // Check if pipe is passed (only if not dead)
-      if (!isDeadRef.current && !pipe.hasPassed() && pipe.getX() + 52 < playerRef.current!.getPosition().x) {
+      if (!isDeadRef.current && !pipe.hasPassed() && pipe.getX() + 48 < playerRef.current!.getPosition().x) {
         pipe.markAsPassed();
         setScore(prev => {
           const newScore = prev + 1;
           currentScoreRef.current = newScore;
           return newScore;
         });
+        
+        // Play point sound
+        SoundLoader.playSound('point');
       }
 
       return !pipe.isOffScreen();
@@ -212,8 +222,11 @@ export default function FlappyBird() {
     canvas.width = CANVAS_WIDTH;
     canvas.height = CANVAS_HEIGHT;
 
-    // Load images before starting the game
-    ImageLoader.loadImages().then(() => {
+    // Load images and sounds before starting the game
+    Promise.all([
+      ImageLoader.loadImages(),
+      SoundLoader.loadSounds()
+    ]).then(() => {
       // Initialize game immediately
       initGame();
       
@@ -223,6 +236,8 @@ export default function FlappyBird() {
       // Start game loop
       lastPipeSpawnTime.current = performance.now();
       animationFrameRef.current = requestAnimationFrame(gameLoop);
+    }).catch(error => {
+      console.error('Error loading game assets:', error);
     });
 
     return () => {
@@ -231,6 +246,8 @@ export default function FlappyBird() {
       }
       // Clean up event listener
       window.removeEventListener('keydown', handleInput);
+      // Clean up sounds
+      SoundLoader.cleanup();
     };
   }, []);
 

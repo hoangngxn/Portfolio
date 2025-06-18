@@ -13,12 +13,33 @@ const MediaPlayer: React.FC = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const { toast } = useToast()
 
+  // Load saved audio preferences from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedVolume = localStorage.getItem('mediaPlayer-volume')
+      const savedMuted = localStorage.getItem('mediaPlayer-muted')
+      
+      if (savedVolume !== null) {
+        setVolume(parseFloat(savedVolume))
+      }
+      
+      if (savedMuted !== null) {
+        setIsMuted(savedMuted === 'true')
+      }
+    }
+  }, [])
+
   useEffect(() => {
     // Create audio element with preload
     audioRef.current = new Audio('/music/theme.mp3')
     audioRef.current.volume = volume
     audioRef.current.loop = true
     audioRef.current.preload = 'auto'
+    
+    // Apply saved muted state
+    if (isMuted) {
+      audioRef.current.muted = true
+    }
 
     // Try multiple autoplay strategies
     const attemptAutoplay = async () => {
@@ -55,7 +76,7 @@ const MediaPlayer: React.FC = () => {
           toast({
             title: "Music Autoplay Blocked",
             description: "Click the play button to start the music",
-            duration: 5000,
+            duration: 3000,
           })
         }
       }
@@ -70,6 +91,20 @@ const MediaPlayer: React.FC = () => {
       }
     }
   }, [])
+
+  // Update audio volume when volume state changes
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume
+    }
+  }, [volume])
+
+  // Update audio muted state when isMuted state changes
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.muted = isMuted
+    }
+  }, [isMuted])
 
   useEffect(() => {
     // Default to minimized on mobile
@@ -98,8 +133,14 @@ const MediaPlayer: React.FC = () => {
 
   const toggleMute = () => {
     if (!audioRef.current) return
-    audioRef.current.muted = !isMuted
-    setIsMuted(!isMuted)
+    const newMutedState = !isMuted
+    audioRef.current.muted = newMutedState
+    setIsMuted(newMutedState)
+    
+    // Save muted state to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mediaPlayer-muted', newMutedState.toString())
+    }
   }
 
   const handleVolumeChange = (value: number[]) => {
@@ -107,12 +148,20 @@ const MediaPlayer: React.FC = () => {
     const newVolume = value[0]
     audioRef.current.volume = newVolume
     setVolume(newVolume)
+    
+    // Save volume to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mediaPlayer-volume', newVolume.toString())
+    }
+    
     if (newVolume === 0) {
       setIsMuted(true)
       audioRef.current.muted = true
+      localStorage.setItem('mediaPlayer-muted', 'true')
     } else if (isMuted) {
       setIsMuted(false)
       audioRef.current.muted = false
+      localStorage.setItem('mediaPlayer-muted', 'false')
     }
   }
 
