@@ -5,8 +5,8 @@ export interface Logo {
   width: number;
   height: number;
   className: string;
-  dx: number;
-  dy: number;
+  speed: number;
+  direction: number; // in radians
   x: number;
   y: number;
 } 

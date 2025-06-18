@@ -2,25 +2,31 @@ import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Logo } from './types';
 import { initialLogos, GLASS_CARD_SIZE_MOBILE, GLASS_CARD_SIZE_DESKTOP} from './initial-logos';
+import { useMouseVelocity } from './use-mouse-velocity';
 
 const BouncingLogos: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const hitSoundRef = useRef<HTMLAudioElement | null>(null);
   const [logos, setLogos] = useState<Logo[]>(initialLogos);
-  const [isPaused, setIsPaused] = useState(true);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isPaused, setIsPaused] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('bouncingLogos-paused');
+      return saved !== null ? saved === 'true' : false;
+    }
+    return false;
+  });
+  const [isMuted, setIsMuted] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('bouncingLogos-muted');
+      return saved !== null ? saved === 'true' : false;
+    }
+    return false;
+  });
+  const { cursor, cursorRef, mouseVelocityRef } = useMouseVelocity(containerRef);
   const speedMultiplier = 1; // Slows down the overall movement
   const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
-
-  // Load from localStorage on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedPaused = localStorage.getItem('bouncingLogos-paused');
-      const savedMuted = localStorage.getItem('bouncingLogos-muted');
-      if (savedPaused !== null) setIsPaused(savedPaused === 'true');
-      if (savedMuted !== null) setIsMuted(savedMuted === 'true');
-    }
-  }, []);
+  const CURSOR_HITBOX_SIZE = 24; // px
+  const GRAVITY = 0.01;
 
   // Save to localStorage when isPaused or isMuted changes
   useEffect(() => {
@@ -42,44 +48,164 @@ const BouncingLogos: React.FC = () => {
     const container = containerRef.current;
     let animationFrameId: number;
 
+    const resistance = 0.99999; // friction per frame
+    const bounciness = 0.99999; // energy loss on collision
+
     const animate = () => {
       if (isPaused) return;
 
       setLogos(prevLogos => {
-        return prevLogos.map(logo => {
-          let newX = logo.x + logo.dx * speedMultiplier;
-          let newY = logo.y + logo.dy * speedMultiplier;
-          let newDx = logo.dx;
-          let newDy = logo.dy;
-          let hitWall = false;
+        // First, update all positions and velocities
+        let updated = prevLogos.map(logo => {
+          let vx = Math.cos(logo.direction) * logo.speed * speedMultiplier;
+          let vy = Math.sin(logo.direction) * logo.speed * speedMultiplier;
+          vy += GRAVITY;
+          return {
+            ...logo,
+            _vx: vx,
+            _vy: vy,
+            _newX: logo.x + vx,
+            _newY: logo.y + vy,
+            _hitWall: false,
+            _hitCursor: false,
+            _lastMouseCollision: (logo as any).lastMouseCollision || 0
+          };
+        });
 
-          // Get the current glass-card size based on screen width
-          const cardSizePx = isMobile ? 48 : 64;
+        // Logo-to-logo collision (AABB, only process each pair once)
+        const cardSizePx = isMobile ? 48 : 64;
+        for (let i = 0; i < updated.length - 1; i++) {
+          for (let j = i + 1; j < updated.length; j++) {
+            const a = updated[i];
+            const b = updated[j];
+            if (
+              a._newX < b._newX + cardSizePx &&
+              a._newX + cardSizePx > b._newX &&
+              a._newY < b._newY + cardSizePx &&
+              a._newY + cardSizePx > b._newY
+            ) {
+              // Swap velocities (arcade style)
+              const tempVx = a._vx;
+              const tempVy = a._vy;
+              updated[i]._vx = b._vx;
+              updated[i]._vy = b._vy;
+              updated[j]._vx = tempVx;
+              updated[j]._vy = tempVy;
+              // Separate them so they don't stick
+              // Move each logo away from the other by half the overlap
+              const overlapX = Math.min(a._newX + cardSizePx, b._newX + cardSizePx) - Math.max(a._newX, b._newX);
+              const overlapY = Math.min(a._newY + cardSizePx, b._newY + cardSizePx) - Math.max(a._newY, b._newY);
+              if (overlapX < overlapY) {
+                // Separate in X
+                if (a._newX < b._newX) {
+                  updated[i]._newX -= overlapX / 2;
+                  updated[j]._newX += overlapX / 2;
+                } else {
+                  updated[i]._newX += overlapX / 2;
+                  updated[j]._newX -= overlapX / 2;
+                }
+              } else {
+                // Separate in Y
+                if (a._newY < b._newY) {
+                  updated[i]._newY -= overlapY / 2;
+                  updated[j]._newY += overlapY / 2;
+                } else {
+                  updated[i]._newY += overlapY / 2;
+                  updated[j]._newY -= overlapY / 2;
+                }
+              }
+            }
+          }
+        }
+
+        // Now process wall/cursor collisions and convert back to speed/direction
+        return updated.map((logo, idx) => {
+          let { _vx: vx, _vy: vy, _newX: newX, _newY: newY, _lastMouseCollision: lastMouseCollision } = logo;
+          let hitWall = false;
+          let hitCursor = false;
+          let newLastMouseCollision = lastMouseCollision;
 
           // Boundary checks with responsive size
           if (newX <= 0 || newX >= container.clientWidth - cardSizePx) {
-            newDx = -newDx;
+            vx = -vx * bounciness;
             newX = Math.max(0, Math.min(newX, container.clientWidth - cardSizePx));
             hitWall = true;
           }
           if (newY <= 0 || newY >= container.clientHeight - cardSizePx) {
-            newDy = -newDy;
+            vy = -vy * bounciness;
             newY = Math.max(0, Math.min(newY, container.clientHeight - cardSizePx));
             hitWall = true;
           }
 
-          // Play hit sound if wall was hit and not muted
-          if (hitWall && hitSoundRef.current && !isMuted) {
+          // Cursor collision detection (using ref)
+          const cursorPos = cursorRef.current;
+          if (cursorPos) {
+            const logoLeft = newX;
+            const logoRight = newX + cardSizePx;
+            const logoTop = newY;
+            const logoBottom = newY + cardSizePx;
+            const cursorLeft = cursorPos.x - CURSOR_HITBOX_SIZE / 2;
+            const cursorRight = cursorPos.x + CURSOR_HITBOX_SIZE / 2;
+            const cursorTop = cursorPos.y - CURSOR_HITBOX_SIZE / 2;
+            const cursorBottom = cursorPos.y + CURSOR_HITBOX_SIZE / 2;
+            // Check for overlap
+            if (
+              logoRight > cursorLeft &&
+              logoLeft < cursorRight &&
+              logoBottom > cursorTop &&
+              logoTop < cursorBottom
+            ) {
+              // Only allow collision if cooldown has passed
+              const now = performance.now();
+              if (now - lastMouseCollision > 100) {
+                const overlapX = Math.min(logoRight, cursorRight) - Math.max(logoLeft, cursorLeft);
+                const overlapY = Math.min(logoBottom, cursorBottom) - Math.max(logoTop, cursorTop);
+                if (overlapX < overlapY) {
+                  vx = -vx * bounciness;
+                  if (logoLeft < cursorLeft) {
+                    newX = cursorLeft - cardSizePx;
+                  } else {
+                    newX = cursorRight;
+                  }
+                } else {
+                  vy = -vy * bounciness;
+                  if (logoTop < cursorTop) {
+                    newY = cursorTop - cardSizePx;
+                  } else {
+                    newY = cursorBottom;
+                  }
+                }
+                if (mouseVelocityRef.current) {
+                  vx += mouseVelocityRef.current.vx * 0.005;
+                  vy += mouseVelocityRef.current.vy * 0.005;
+                }
+                hitCursor = true;
+                newLastMouseCollision = now;
+              }
+            }
+          }
+
+          // Play hit sound if wall or cursor was hit and not muted
+          if ((hitWall || hitCursor) && hitSoundRef.current && !isMuted) {
             hitSoundRef.current.currentTime = 0;
             hitSoundRef.current.play().catch(err => console.log('Error playing sound:', err));
           }
+
+          // Apply resistance (friction)
+          vx *= resistance;
+          vy *= resistance;
+
+          // Convert velocity vector back to speed/direction
+          const newSpeed = Math.sqrt(vx * vx + vy * vy);
+          const newDirection = Math.atan2(vy, vx);
 
           return {
             ...logo,
             x: newX,
             y: newY,
-            dx: newDx,
-            dy: newDy
+            speed: newSpeed,
+            direction: newDirection,
+            lastMouseCollision: newLastMouseCollision
           };
         });
       });
@@ -92,10 +218,10 @@ const BouncingLogos: React.FC = () => {
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isPaused, isMuted]);
+  }, [isPaused, isMuted, isMobile]);
 
   return (
-    <div ref={containerRef} className="absolute inset-0 overflow-hidden pointer-events-none bg-black/50">
+    <div ref={containerRef} className="absolute inset-0 overflow-hidden bg-black/50">
       {/* Control Panel */}
       <div className="absolute top-4 right-4 flex gap-2 pointer-events-auto">
         <button
@@ -134,7 +260,7 @@ const BouncingLogos: React.FC = () => {
         <div
           key={logo.id}
           id={logo.id}
-          className={`absolute glass-card rounded-xl opacity-80 flex items-center justify-center ${isMobile ? GLASS_CARD_SIZE_MOBILE : GLASS_CARD_SIZE_DESKTOP}`}
+          className={`absolute glass-card rounded-xl opacity-80 flex items-center justify-center ${isMobile ? GLASS_CARD_SIZE_MOBILE : GLASS_CARD_SIZE_DESKTOP} pointer-events-none`}
           style={{
             transform: `translate(${logo.x}px, ${logo.y}px)`,
             transition: 'transform 16ms linear'
@@ -149,6 +275,21 @@ const BouncingLogos: React.FC = () => {
           />
         </div>
       ))}
+      {/* Draw cursor hitbox for debugging/visual feedback */}
+      {/* {cursor && (
+        <div
+          className="absolute border-2 border-pink-500 pointer-events-none z-50"
+          style={{
+            left: cursor.x - CURSOR_HITBOX_SIZE / 2,
+            top: cursor.y - CURSOR_HITBOX_SIZE / 2,
+            width: CURSOR_HITBOX_SIZE,
+            height: CURSOR_HITBOX_SIZE,
+            borderRadius: 8,
+            boxSizing: 'border-box',
+            background: 'rgba(255,0,128,0.08)'
+          }}
+        />
+      )} */}
     </div>
   );
 };
