@@ -167,40 +167,47 @@ const MediaPlayer: React.FC = () => {
 
   return (
     <div
-      className={`fixed bottom-4 right-4 z-50 glass-card rounded-xl p-3 flex items-center gap-3 transition-all duration-200 ${minimized ? 'w-auto' : 'w-fit'}`}
+      className={`fixed bottom-4 right-4 z-50 glass-card rounded-xl p-3 flex ${minimized ? 'items-center' : 'flex-col items-center'} gap-3 transition-all duration-200 ${minimized ? 'w-auto' : 'w-fit'}`}
       style={{ cursor: 'pointer' }}
       onClick={() => setMinimized((m) => !m)}
       tabIndex={0}
       aria-label={minimized ? 'Expand player' : 'Minimize player'}
     >
-      <button
-        onClick={e => { e.stopPropagation(); togglePlay(); }}
-        className="glass-card rounded-lg p-2 hover:bg-white/10 transition-colors"
-        aria-label={isPlaying ? 'Pause' : 'Play'}
-      >
-        {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-      </button>
       {!minimized && (
-        <>
-          <button
-            onClick={e => { e.stopPropagation(); toggleMute(); }}
-            className="glass-card rounded-lg p-2 hover:bg-white/10 transition-colors"
-            aria-label={isMuted ? 'Unmute' : 'Mute'}
-          >
-            {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-          </button>
-          <div className="w-24">
-            <Slider
-              value={[volume]}
-              onValueChange={handleVolumeChange}
-              max={1}
-              step={0.01}
-              className="w-full"
-              onClick={e => e.stopPropagation()}
-            />
-          </div>
-        </>
+        <span className="mb-1 text-sm font-semibold text-foreground/80 select-none text-center w-full">
+          Steven Universe Theme (2013)
+        </span>
       )}
+      <div className={`flex items-center gap-3 ${minimized ? '' : 'w-full justify-center'}`}>
+        <button
+          onClick={e => { e.stopPropagation(); togglePlay(); }}
+          className="glass-card rounded-lg p-2 hover:bg-white/10 transition-colors"
+          aria-label={isPlaying ? 'Pause' : 'Play'}
+        >
+          {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+        </button>
+        {!minimized && (
+          <>
+            <button
+              onClick={e => { e.stopPropagation(); toggleMute(); }}
+              className="glass-card rounded-lg p-2 hover:bg-white/10 transition-colors"
+              aria-label={isMuted ? 'Unmute' : 'Mute'}
+            >
+              {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+            </button>
+            <div className="w-24">
+              <Slider
+                value={[volume]}
+                onValueChange={handleVolumeChange}
+                max={1}
+                step={0.01}
+                className="w-full"
+                onClick={e => e.stopPropagation()}
+              />
+            </div>
+          </>
+        )}
+      </div>
     </div>
   )
 }

@@ -2,7 +2,7 @@
 
 ![Portfolio Preview](/Portfolio.png)
 
-A modern, interactive portfolio website showcasing my work as a Full-stack Developer. Built with Next.js and featuring a sleek, glass-morphism design with smooth animations and interactive elements.
+A modern, interactive portfolio website showcasing my work as a Full-stack Developer. Built with Next.js, featuring a sleek glass-morphism design, smooth animations, and a built-in Flappy Bird game as an interactive showcase.
 
 ## 🌟 Features
 
@@ -11,6 +11,7 @@ A modern, interactive portfolio website showcasing my work as a Full-stack Devel
 - **Smooth Navigation**: Snap scrolling with smooth transitions between sections
 - **Responsive Layout**: Fully responsive design that works on all devices
 - **Project Showcase**: Detailed project pages with galleries and descriptions
+- **Built-in Flappy Bird Game**: Play a fully interactive Flappy Bird clone directly in the portfolio ([see `/flappy-bird`](src/app/flappy-bird)).
 - **Background Music**: Ambient background music with volume controls
 - **Dark Theme**: Elegant dark theme with glowing accents
 
@@ -57,6 +58,7 @@ pnpm dev
 ```
 src/
 ├── app/                 # Next.js app router pages
+│   └── flappy-bird/     # Built-in Flappy Bird game showcase
 ├── components/         # React components
 │   ├── ui/            # Reusable UI components
 │   └── sections/      # Page sections
@@ -65,17 +67,3 @@ src/
 ├── lib/               # Utility functions
 └── styles/            # Global styles
 ```
-
-## 🎨 Design Features
-
-- Glass-morphism cards with backdrop blur
-- Smooth scroll snap navigation
-- Floating animations
-- Glowing text effects
-- Interactive bouncing logos
-- Custom scrollbar styling
-- Responsive grid layouts
-
-## 📄 License
-
-This project is open source and available under the [MIT License](LICENSE).

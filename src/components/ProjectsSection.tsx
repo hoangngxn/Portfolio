@@ -24,7 +24,15 @@ const ProjectsSection: React.FC = () => {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) {
+        setOpenIndex(0);
+      } else {
+        setOpenIndex(null);
+      }
+    };
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
@@ -63,7 +71,7 @@ const ProjectsSection: React.FC = () => {
         </div>
 
         {/* Projects Grid - Collapsible on mobile, expanded on desktop */}
-        <div className={`grid ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2'} gap-2 md:gap-4 flex-1`}>
+        <div className={`grid ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2'} gap-0 md:gap-4 flex-1`}>
           {projects.map((project, index) => {
             const ProjectIcon = getProjectIcon(project.type);
             const hasMultipleRepos = project.githubUrlFE && project.githubUrlBE;

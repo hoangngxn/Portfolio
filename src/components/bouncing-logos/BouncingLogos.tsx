@@ -1,15 +1,34 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Logo } from './types';
-import { initialLogos } from './initial-logos';
+import { initialLogos, GLASS_CARD_SIZE_MOBILE, GLASS_CARD_SIZE_DESKTOP} from './initial-logos';
 
 const BouncingLogos: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const hitSoundRef = useRef<HTMLAudioElement | null>(null);
   const [logos, setLogos] = useState<Logo[]>(initialLogos);
-  const [isPaused, setIsPaused] = useState(false);
+  const [isPaused, setIsPaused] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
   const speedMultiplier = 1; // Slows down the overall movement
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedPaused = localStorage.getItem('bouncingLogos-paused');
+      const savedMuted = localStorage.getItem('bouncingLogos-muted');
+      if (savedPaused !== null) setIsPaused(savedPaused === 'true');
+      if (savedMuted !== null) setIsMuted(savedMuted === 'true');
+    }
+  }, []);
+
+  // Save to localStorage when isPaused or isMuted changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('bouncingLogos-paused', isPaused.toString());
+      localStorage.setItem('bouncingLogos-muted', isMuted.toString());
+    }
+  }, [isPaused, isMuted]);
 
   useEffect(() => {
     // Initialize hit sound
@@ -34,19 +53,18 @@ const BouncingLogos: React.FC = () => {
           let newDy = logo.dy;
           let hitWall = false;
 
-          // Get the current logo size based on screen width
-          const isMobile = window.innerWidth < 768;
-          const logoSize = isMobile ? 48 : 64; // Reduced from 48/96 to 32/64
+          // Get the current glass-card size based on screen width
+          const cardSizePx = isMobile ? 48 : 64;
 
           // Boundary checks with responsive size
-          if (newX <= 0 || newX >= container.clientWidth - logoSize) {
+          if (newX <= 0 || newX >= container.clientWidth - cardSizePx) {
             newDx = -newDx;
-            newX = Math.max(0, Math.min(newX, container.clientWidth - logoSize));
+            newX = Math.max(0, Math.min(newX, container.clientWidth - cardSizePx));
             hitWall = true;
           }
-          if (newY <= 0 || newY >= container.clientHeight - logoSize) {
+          if (newY <= 0 || newY >= container.clientHeight - cardSizePx) {
             newDy = -newDy;
-            newY = Math.max(0, Math.min(newY, container.clientHeight - logoSize));
+            newY = Math.max(0, Math.min(newY, container.clientHeight - cardSizePx));
             hitWall = true;
           }
 
@@ -116,8 +134,7 @@ const BouncingLogos: React.FC = () => {
         <div
           key={logo.id}
           id={logo.id}
-          className="absolute glass-card rounded-xl opacity-80 flex items-center justify-center
-            w-8 h-8 md:w-16 md:h-16" // Reduced from w-12/w-24 to w-8/w-16
+          className={`absolute glass-card rounded-xl opacity-80 flex items-center justify-center ${isMobile ? GLASS_CARD_SIZE_MOBILE : GLASS_CARD_SIZE_DESKTOP}`}
           style={{
             transform: `translate(${logo.x}px, ${logo.y}px)`,
             transition: 'transform 16ms linear'
@@ -128,7 +145,7 @@ const BouncingLogos: React.FC = () => {
             alt={logo.alt}
             width={logo.width}
             height={logo.height}
-            className="w-6 h-6 md:w-10 md:h-10" // Reduced from w-8/w-14 to w-6/w-10
+            className={logo.className}
           />
         </div>
       ))}
