@@ -16,7 +16,7 @@ export class Pipe {
 
   constructor(canvasWidth: number, canvasHeight: number) {
     this.gapHeight = 200; // Gap between top and bottom pipes
-    this.speed = 0.55;
+    this.speed = 150; // pixels per second (tune as needed)
     this.canvasHeight = canvasHeight;
     this.x = canvasWidth;
     this.gapY = this.getRandomGapPosition();
@@ -29,8 +29,8 @@ export class Pipe {
     return Math.floor(Math.random() * (maxGap - minGap + 1)) + minGap;
   }
 
-  update() {
-    this.x -= this.speed;
+  update(deltaTime: number) {
+    this.x -= this.speed * deltaTime;
   }
 
   draw(ctx: CanvasRenderingContext2D) {

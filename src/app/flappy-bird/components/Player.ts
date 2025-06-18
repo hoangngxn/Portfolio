@@ -12,8 +12,8 @@ export class Player {
   private isDead: boolean;
   private isIdle: boolean;
   private frame: number;
-  private frameTick: number;
-  private frameInterval: number;
+  private frameTime: number; // seconds per frame
+  private frameAccumulator: number;
   private rotation: number;
 
   constructor(canvasWidth: number, canvasHeight: number) {
@@ -22,35 +22,35 @@ export class Player {
     this.x = canvasWidth / 4;
     this.y = canvasHeight / 2;
     this.velocity = 0;
-    this.gravity = 0.02;
-    this.jumpForce = -1.75;
+    this.gravity = 1800; // pixels per second squared (tune as needed)
+    this.jumpForce = -550; // pixels per second (tune as needed)
     this.canvasHeight = canvasHeight;
     this.isDead = false;
     this.isIdle = true;
     this.frame = 0;
-    this.frameTick = 0;
-    this.frameInterval = 30; // Adjust for animation speed
+    this.frameTime = 0.12; // seconds per frame (tune for animation speed)
+    this.frameAccumulator = 0;
     this.rotation = 0;
   }
 
-  update() {
+  update(deltaTime: number) {
     if (!this.isIdle) {
       // Apply gravity only if not idle
-      this.velocity += this.gravity;
-      this.y += this.velocity;
+      this.velocity += this.gravity * deltaTime;
+      this.y += this.velocity * deltaTime;
       
-      // Animation frame update
-      this.frameTick++;
-      if (this.frameTick >= this.frameInterval) {
+      // Animation frame update using time accumulator
+      this.frameAccumulator += deltaTime;
+      if (this.frameAccumulator >= this.frameTime) {
         this.frame = (this.frame + 1) % 3;
-        this.frameTick = 0;
+        this.frameAccumulator -= this.frameTime;
       }
 
       // Tilt logic
       if (this.velocity < 0) {
         this.rotation = -0.35; // Tilt up (radians, about -20deg)
       } else {
-        this.rotation = Math.min(this.rotation + 0.03, 1.0); // Tilt down, max about 57deg
+        this.rotation = Math.min(this.rotation + 1.2 * deltaTime, 1.0); // Tilt down, max about 57deg
       }
 
       // Stop falling when hitting the ground (for death animation)
@@ -76,6 +76,7 @@ export class Player {
     this.velocity = 0;
     this.isDead = false;
     this.isIdle = true;
+    this.frameAccumulator = 0;
   }
 
   jump() {

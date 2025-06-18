@@ -39,13 +39,14 @@ export default function FlappyBird() {
   const backgroundX = useRef<number>(0);
   const baseX = useRef<number>(0);
   const currentScoreRef = useRef<number>(0);
+  const lastTimestampRef = useRef<number | null>(null);
 
   const CANVAS_WIDTH = 432;
   const CANVAS_HEIGHT = 768;
   const BASE_HEIGHT = 168;
   const PIPE_SPAWN_INTERVAL = 1500; // Spawn a new pipe every 1.5 seconds
   const PIPE_START_DELAY = 2000; // Start spawning pipes 2 seconds after first flap
-  const SCROLL_SPEED = 0.55; // Same as pipe speed
+  const SCROLL_SPEED = 150; // pixels per second
 
   const initGame = () => {
     if (!canvasRef.current) return;
@@ -100,14 +101,14 @@ export default function FlappyBird() {
     setGameState('dead');
   };
 
-  const drawBackground = (ctx: CanvasRenderingContext2D) => {
+  const drawBackground = (ctx: CanvasRenderingContext2D, deltaTime: number) => {
     const backgroundImage = ImageLoader.getImage('background');
     const baseImage = ImageLoader.getImage('base');
     
     // Update scroll positions
     if (gameState === 'playing' && !isDeadRef.current) {
-      backgroundX.current -= SCROLL_SPEED;
-      baseX.current -= SCROLL_SPEED;
+      backgroundX.current -= SCROLL_SPEED * deltaTime;
+      baseX.current -= SCROLL_SPEED * deltaTime;
     }
 
     // Use modulo to create seamless looping
@@ -129,11 +130,18 @@ export default function FlappyBird() {
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx || !playerRef.current) return;
 
+    // Calculate deltaTime in seconds
+    let deltaTime = 1 / 60; // default to 1/60th of a second
+    if (lastTimestampRef.current !== null) {
+      deltaTime = (timestamp - lastTimestampRef.current) / 1000;
+    }
+    lastTimestampRef.current = timestamp;
+
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw background and base
-    drawBackground(ctx);
+    drawBackground(ctx, deltaTime);
 
     // Spawn new pipes only during gameplay and after the start delay
     if (gameState === 'playing' && 
@@ -149,12 +157,12 @@ export default function FlappyBird() {
     pipesRef.current = pipesRef.current.filter(pipe => {
       // Only update pipe position if we're playing and not dead
       if (gameState === 'playing' && !isDeadRef.current) {
-        pipe.update();
+        pipe.update(deltaTime);
       }
       pipe.draw(ctx);
 
       // Check if pipe is passed (only if not dead)
-      if (!isDeadRef.current && !pipe.hasPassed() && pipe.getX() + 80 < playerRef.current!.getPosition().x) {
+      if (!isDeadRef.current && !pipe.hasPassed() && pipe.getX() + 52 < playerRef.current!.getPosition().x) {
         pipe.markAsPassed();
         setScore(prev => {
           const newScore = prev + 1;
@@ -169,10 +177,10 @@ export default function FlappyBird() {
     // Update and draw player
     if (isDeadRef.current) {
       // Death animation - make bird red and continue falling
-      playerRef.current.update();
+      playerRef.current.update(deltaTime);
       playerRef.current.draw(ctx, true);
     } else {
-      playerRef.current.update();
+      playerRef.current.update(deltaTime);
       playerRef.current.draw(ctx);
     }
 
@@ -224,6 +232,10 @@ export default function FlappyBird() {
       // Clean up event listener
       window.removeEventListener('keydown', handleInput);
     };
+  }, []);
+
+  useEffect(() => {
+    lastTimestampRef.current = null;
   }, []);
 
   return (
