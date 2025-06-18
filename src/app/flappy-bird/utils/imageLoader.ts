@@ -33,7 +33,7 @@ export class ImageLoader {
         digit9: '/images/9.png',
         score: '/images/score.png',
         gameover: '/images/gameover.png',
-        space: '/images/space.png',
+        space: '/images/Space.png',
       };
 
       let loadedCount = 0;
