@@ -11,10 +11,14 @@ export class Player {
   private canvasHeight: number;
   private isDead: boolean;
   private isIdle: boolean;
+  private frame: number;
+  private frameTick: number;
+  private frameInterval: number;
+  private rotation: number;
 
   constructor(canvasWidth: number, canvasHeight: number) {
-    this.width = 34; // Bird image width
-    this.height = 24; // Bird image height
+    this.width = 51; // Bird image width
+    this.height = 36; // Bird image height
     this.x = canvasWidth / 4;
     this.y = canvasHeight / 2;
     this.velocity = 0;
@@ -23,6 +27,10 @@ export class Player {
     this.canvasHeight = canvasHeight;
     this.isDead = false;
     this.isIdle = true;
+    this.frame = 0;
+    this.frameTick = 0;
+    this.frameInterval = 30; // Adjust for animation speed
+    this.rotation = 0;
   }
 
   update() {
@@ -31,10 +39,25 @@ export class Player {
       this.velocity += this.gravity;
       this.y += this.velocity;
       
+      // Animation frame update
+      this.frameTick++;
+      if (this.frameTick >= this.frameInterval) {
+        this.frame = (this.frame + 1) % 3;
+        this.frameTick = 0;
+      }
+
+      // Tilt logic
+      if (this.velocity < 0) {
+        this.rotation = -0.35; // Tilt up (radians, about -20deg)
+      } else {
+        this.rotation = Math.min(this.rotation + 0.03, 1.0); // Tilt down, max about 57deg
+      }
+
       // Stop falling when hitting the ground (for death animation)
       if (this.isDead && this.y + this.height >= this.canvasHeight) {
         this.y = this.canvasHeight - this.height;
         this.velocity = 0;
+        this.rotation = 1.0; // Face down on ground
       }
     }
   }
@@ -59,6 +82,7 @@ export class Player {
     if (!this.isDead) {
       this.isIdle = false; // Exit idle state on first jump
       this.velocity = this.jumpForce;
+      this.rotation = -0.35; // Snap up on jump
     }
   }
 
@@ -67,16 +91,24 @@ export class Player {
   }
 
   draw(ctx: CanvasRenderingContext2D, isDead: boolean = false) {
-    const birdImage = ImageLoader.getImage('birdMid');
-    
-    // Draw the bird
+    const birdFrames = [
+      ImageLoader.getImage('birdDown'),
+      ImageLoader.getImage('birdMid'),
+      ImageLoader.getImage('birdUp'),
+    ];
+    const birdImage = birdFrames[this.frame];
+
+    ctx.save();
+    ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+    ctx.rotate(this.rotation);
     ctx.drawImage(
       birdImage,
-      this.x,
-      this.y,
+      -this.width / 2,
+      -this.height / 2,
       this.width,
       this.height
     );
+    ctx.restore();
   }
 
   getPosition() {

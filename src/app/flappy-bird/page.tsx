@@ -4,12 +4,30 @@ import { useEffect, useRef, useState } from 'react';
 import { Player } from './components/Player';
 import { Pipe } from './components/Pipe';
 import { ImageLoader } from './utils/imageLoader';
+import { ScoreDisplay } from './components/ScoreDisplay';
 
 export default function FlappyBird() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [gameState, setGameState] = useState<'playing' | 'dead'>('playing');
   const [score, setScore] = useState(0);
-  const [highScore, setHighScore] = useState(0);
+  const [highScore, setHighScore] = useState(() => {
+    // Load high score from localStorage on component mount
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('flappyBirdHighScore');
+      console.log('Loading high score from localStorage:', saved);
+      return saved ? parseInt(saved, 10) : 0;
+    }
+    return 0;
+  });
+  const [hasStarted, setHasStarted] = useState(false);
+
+  // Save high score to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined' && highScore > 0) {
+      console.log('Saving high score to localStorage:', highScore);
+      localStorage.setItem('flappyBirdHighScore', highScore.toString());
+    }
+  }, [highScore]);
 
   // Game objects
   const playerRef = useRef<Player | null>(null);
@@ -20,23 +38,26 @@ export default function FlappyBird() {
   const gameStartTime = useRef<number>(0);
   const backgroundX = useRef<number>(0);
   const baseX = useRef<number>(0);
+  const currentScoreRef = useRef<number>(0);
 
-  const CANVAS_WIDTH = 288;
-  const CANVAS_HEIGHT = 512;
-  const BASE_HEIGHT = 112;
-  const PIPE_SPAWN_INTERVAL = 2500; // Spawn a new pipe every 2.5 seconds
+  const CANVAS_WIDTH = 432;
+  const CANVAS_HEIGHT = 768;
+  const BASE_HEIGHT = 168;
+  const PIPE_SPAWN_INTERVAL = 1500; // Spawn a new pipe every 1.5 seconds
   const PIPE_START_DELAY = 2000; // Start spawning pipes 2 seconds after first flap
-  const SCROLL_SPEED = 0.65; // Same as pipe speed
+  const SCROLL_SPEED = 0.55; // Same as pipe speed
 
   const initGame = () => {
     if (!canvasRef.current) return;
     playerRef.current = new Player(CANVAS_WIDTH, CANVAS_HEIGHT - BASE_HEIGHT);
     pipesRef.current = [];
     setScore(0);
+    currentScoreRef.current = 0;
     isDeadRef.current = false;
     gameStartTime.current = 0;
     backgroundX.current = 0;
     baseX.current = 0;
+    setHasStarted(false);
   };
 
   const handleInput = (e: KeyboardEvent) => {
@@ -51,6 +72,7 @@ export default function FlappyBird() {
         // If this is the first flap, record the time
         if (gameStartTime.current === 0) {
           gameStartTime.current = performance.now();
+          setHasStarted(true);
         }
         playerRef.current.jump();
       }
@@ -66,6 +88,15 @@ export default function FlappyBird() {
     if (playerRef.current) {
       playerRef.current.setDead(true);
     }
+    
+    // Save high score to localStorage if current score is higher
+    const finalScore = currentScoreRef.current;
+    console.log('Death handler - Current score:', finalScore, 'High score:', highScore);
+    if (finalScore > highScore) {
+      console.log('Updating high score from', highScore, 'to', finalScore);
+      setHighScore(finalScore);
+    }
+    
     setGameState('dead');
   };
 
@@ -125,8 +156,11 @@ export default function FlappyBird() {
       // Check if pipe is passed (only if not dead)
       if (!isDeadRef.current && !pipe.hasPassed() && pipe.getX() + 80 < playerRef.current!.getPosition().x) {
         pipe.markAsPassed();
-        setScore(prev => prev + 1);
-        setHighScore(prev => Math.max(prev, score + 1));
+        setScore(prev => {
+          const newScore = prev + 1;
+          currentScoreRef.current = newScore;
+          return newScore;
+        });
       }
 
       return !pipe.isOffScreen();
@@ -145,11 +179,13 @@ export default function FlappyBird() {
     // Check collisions only if not already dead
     if (!isDeadRef.current) {
       const playerCollided = playerRef.current.checkCollision();
+      const playerPos = playerRef.current.getPosition();
       const pipeCollision = pipesRef.current.some(pipe => 
         pipe.checkCollision(
-          playerRef.current!.getPosition().x,
-          playerRef.current!.getPosition().y,
-          playerRef.current!.getPosition().width / 2
+          playerPos.x,
+          playerPos.y,
+          playerPos.width,
+          playerPos.height
         )
       );
 
@@ -198,12 +234,9 @@ export default function FlappyBird() {
           className="rounded-lg border-4 border-white"
           tabIndex={0}
         />
-        
+        {/* Score UI using digit images */}
+        {hasStarted && <ScoreDisplay score={score} />}
         {/* Overlay UI */}
-        <div className="absolute top-4 left-4 text-white text-2xl font-bold">
-          Score: {score}
-        </div>
-        
         {gameState === 'dead' && (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-white bg-black bg-opacity-30">
             <h2 className="text-4xl font-bold mb-4">Game Over!</h2>
