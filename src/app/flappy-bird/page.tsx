@@ -3,9 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Player } from './components/Player';
 import { Pipe } from './components/Pipe';
+import { Background } from './components/Background';
 import { ImageLoader } from './utils/imageLoader';
 import { SoundLoader } from './utils/soundLoader';
 import { ScoreDisplay } from './components/ScoreDisplay';
+import { DeathScreen } from './components/DeathScreen';
 
 export default function FlappyBird() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -33,12 +35,11 @@ export default function FlappyBird() {
   // Game objects
   const playerRef = useRef<Player | null>(null);
   const pipesRef = useRef<Pipe[]>([]);
+  const backgroundRef = useRef<Background | null>(null);
   const animationFrameRef = useRef<number>(0);
   const lastPipeSpawnTime = useRef<number>(0);
   const isDeadRef = useRef<boolean>(false);
   const gameStartTime = useRef<number>(0);
-  const backgroundX = useRef<number>(0);
-  const baseX = useRef<number>(0);
   const currentScoreRef = useRef<number>(0);
   const lastTimestampRef = useRef<number | null>(null);
 
@@ -52,13 +53,12 @@ export default function FlappyBird() {
   const initGame = () => {
     if (!canvasRef.current) return;
     playerRef.current = new Player(CANVAS_WIDTH, CANVAS_HEIGHT - BASE_HEIGHT);
+    backgroundRef.current = new Background(CANVAS_WIDTH, CANVAS_HEIGHT, BASE_HEIGHT, SCROLL_SPEED);
     pipesRef.current = [];
     setScore(0);
     currentScoreRef.current = 0;
     isDeadRef.current = false;
     gameStartTime.current = 0;
-    backgroundX.current = 0;
-    baseX.current = 0;
     setHasStarted(false);
   };
 
@@ -108,34 +108,10 @@ export default function FlappyBird() {
     setGameState('dead');
   };
 
-  const drawBackground = (ctx: CanvasRenderingContext2D, deltaTime: number) => {
-    const backgroundImage = ImageLoader.getImage('background');
-    const baseImage = ImageLoader.getImage('base');
-    
-    // Update scroll positions
-    if (gameState === 'playing' && !isDeadRef.current) {
-      backgroundX.current -= SCROLL_SPEED * deltaTime;
-      baseX.current -= SCROLL_SPEED * deltaTime;
-    }
-
-    // Use modulo to create seamless looping
-    const backgroundOffset = ((backgroundX.current % CANVAS_WIDTH) + CANVAS_WIDTH) % CANVAS_WIDTH;
-    const baseOffset = ((baseX.current % CANVAS_WIDTH) + CANVAS_WIDTH) % CANVAS_WIDTH;
-    
-    // Draw scrolling background
-    ctx.drawImage(backgroundImage, backgroundOffset, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    ctx.drawImage(backgroundImage, backgroundOffset - CANVAS_WIDTH + 1, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    
-    // Draw scrolling base
-    const baseY = CANVAS_HEIGHT - BASE_HEIGHT;
-    ctx.drawImage(baseImage, baseOffset, baseY, CANVAS_WIDTH, BASE_HEIGHT);
-    ctx.drawImage(baseImage, baseOffset - CANVAS_WIDTH + 1, baseY, CANVAS_WIDTH, BASE_HEIGHT);
-  };
-
   const gameLoop = (timestamp: number) => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx || !playerRef.current) return;
+    if (!canvas || !ctx || !playerRef.current || !backgroundRef.current) return;
 
     // Calculate deltaTime in seconds
     let deltaTime = 1 / 60; // default to 1/60th of a second
@@ -147,8 +123,9 @@ export default function FlappyBird() {
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw background and base
-    drawBackground(ctx, deltaTime);
+    // Update and draw background
+    backgroundRef.current.update(deltaTime, gameState === 'playing', isDeadRef.current);
+    backgroundRef.current.draw(ctx);
 
     // Spawn new pipes only during gameplay and after the start delay
     if (gameState === 'playing' && 
@@ -169,7 +146,7 @@ export default function FlappyBird() {
       pipe.draw(ctx);
 
       // Check if pipe is passed (only if not dead)
-      if (!isDeadRef.current && !pipe.hasPassed() && pipe.getX() + 48 < playerRef.current!.getPosition().x) {
+      if (!isDeadRef.current && !pipe.hasPassed() && pipe.getX() < playerRef.current!.getPosition().x) {
         pipe.markAsPassed();
         setScore(prev => {
           const newScore = prev + 1;
@@ -263,16 +240,11 @@ export default function FlappyBird() {
           className="rounded-lg border-4 border-white"
           tabIndex={0}
         />
-        {/* Score UI using digit images */}
-        {hasStarted && <ScoreDisplay score={score} />}
-        {/* Overlay UI */}
+        {/* Score UI using digit images - hidden during death screen */}
+        {hasStarted && gameState !== 'dead' && <ScoreDisplay score={score} />}
+        {/* Death Screen */}
         {gameState === 'dead' && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-white bg-black bg-opacity-30">
-            <h2 className="text-4xl font-bold mb-4">Game Over!</h2>
-            <p className="text-2xl mb-2">Score: {score}</p>
-            <p className="text-xl mb-4">High Score: {highScore}</p>
-            <p className="text-lg">Press Space to Play Again</p>
-          </div>
+          <DeathScreen score={score} highScore={highScore} />
         )}
       </div>
     </div>

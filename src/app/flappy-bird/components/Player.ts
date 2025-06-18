@@ -34,17 +34,19 @@ export class Player {
   }
 
   update(deltaTime: number) {
-    if (!this.isIdle) {
-      // Apply gravity only if not idle
-      this.velocity += this.gravity * deltaTime;
-      this.y += this.velocity * deltaTime;
-      
-      // Animation frame update using time accumulator
+    // Animation frame update using time accumulator - always animate unless dead on ground
+    if (!(this.isDead && this.y + this.height >= this.canvasHeight)) {
       this.frameAccumulator += deltaTime;
       if (this.frameAccumulator >= this.frameTime) {
         this.frame = (this.frame + 1) % 3;
         this.frameAccumulator -= this.frameTime;
       }
+    }
+
+    if (!this.isIdle) {
+      // Apply gravity only if not idle
+      this.velocity += this.gravity * deltaTime;
+      this.y += this.velocity * deltaTime;
 
       // Tilt logic
       if (this.velocity < 0) {

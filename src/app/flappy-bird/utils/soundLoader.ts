@@ -1,7 +1,7 @@
 export class SoundLoader {
   private static sounds: Map<string, HTMLAudioElement> = new Map();
   private static isLoaded = false;
-  private static volume: number = 0.3; // Default volume (0.0 to 1.0)
+  private static volume: number = 0.2; // Default volume (0.0 to 1.0)
 
   static setVolume(volume: number): void {
     // Clamp volume between 0 and 1

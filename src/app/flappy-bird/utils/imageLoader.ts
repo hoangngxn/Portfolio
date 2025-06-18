@@ -26,6 +26,9 @@ export class ImageLoader {
         digit7: '/images/7.png',
         digit8: '/images/8.png',
         digit9: '/images/9.png',
+        score: '/images/score.png',
+        gameover: '/images/gameover.png',
+        space: '/images/space.png',
       };
 
       let loadedCount = 0;
