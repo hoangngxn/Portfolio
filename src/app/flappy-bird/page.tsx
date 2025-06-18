@@ -88,6 +88,26 @@ export default function FlappyBird() {
     }
   };
 
+  const handleClick = () => {
+    if (!isDeadRef.current) {
+      if (playerRef.current) {
+        // If this is the first flap, record the time
+        if (gameStartTime.current === 0) {
+          gameStartTime.current = performance.now();
+          setHasStarted(true);
+        }
+        playerRef.current.jump();
+        
+        // Play wing sound
+        SoundLoader.playSound('wing');
+      }
+    } else {
+      // Restart game when player clicks after death
+      initGame();
+      setGameState('playing');
+    }
+  };
+
   const handleDeath = () => {
     isDeadRef.current = true;
     if (playerRef.current) {
@@ -209,6 +229,9 @@ export default function FlappyBird() {
       
       // Add keyboard event listener
       window.addEventListener('keydown', handleInput);
+      
+      // Add click event listener to canvas
+      canvas.addEventListener('click', handleClick);
 
       // Start game loop
       lastPipeSpawnTime.current = performance.now();
@@ -223,6 +246,10 @@ export default function FlappyBird() {
       }
       // Clean up event listener
       window.removeEventListener('keydown', handleInput);
+      // Clean up click event listener
+      if (canvas) {
+        canvas.removeEventListener('click', handleClick);
+      }
       // Clean up sounds
       SoundLoader.cleanup();
     };

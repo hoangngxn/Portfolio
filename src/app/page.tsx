@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import HeroSection from "@/components/HeroSection"
 import AboutSection from "@/components/AboutSection"
+import ShowcaseSection from "@/components/ShowcaseSection"
 import ProjectsSection from "@/components/ProjectsSection"
 import ContactSection from "@/components/ContactSection"
 
@@ -95,6 +96,7 @@ export default function Home() {
     <main className="h-screen overflow-y-scroll snap-container">
       <HeroSection />
       <AboutSection />
+      <ShowcaseSection />
       <ProjectsSection />
       <ContactSection />
     </main>
