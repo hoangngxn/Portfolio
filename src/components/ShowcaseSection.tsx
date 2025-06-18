@@ -82,20 +82,109 @@ const ShowcaseSection: React.FC = () => {
   const [transitioning, setTransitioning] = useState(false);
   const isMobile = useIsMobile();
 
+  // FLIP animation state for info card (desktop only)
+  const infoCardRef = useRef<HTMLDivElement>(null);
+  const [flipStyle, setFlipStyle] = useState<React.CSSProperties>({});
+  const [isFlipping, setIsFlipping] = useState(false);
+
   const handleVideoClick = () => {
-    setTransitioning(true);
-    setTimeout(() => {
-      setShowGame(true);
-      setTransitioning(false);
-    }, 400); // Duration matches transition
+    if (!isMobile && infoCardRef.current) {
+      // FLIP: First - get initial position
+      const firstRect = infoCardRef.current.getBoundingClientRect();
+      setTransitioning(true);
+      setTimeout(() => {
+        setShowGame(true);
+        setTimeout(() => {
+          // FLIP: Last - get new position
+          if (infoCardRef.current) {
+            const lastRect = infoCardRef.current.getBoundingClientRect();
+            const deltaX = firstRect.left - lastRect.left;
+            const deltaY = firstRect.top - lastRect.top;
+            setFlipStyle({
+              transform: `translate(${deltaX}px, ${deltaY}px)`,
+              transition: 'none',
+              zIndex: 50,
+              position: 'relative',
+            });
+            setIsFlipping(true);
+            // Invert & Play
+            requestAnimationFrame(() => {
+              setFlipStyle({
+                transform: 'translate(0, 0)',
+                transition: 'transform 400ms cubic-bezier(0.4,0,0.2,1)',
+                zIndex: 50,
+                position: 'relative',
+              });
+            });
+            setTimeout(() => {
+              setIsFlipping(false);
+              setFlipStyle({});
+              setTransitioning(false);
+            }, 400);
+          } else {
+            setIsFlipping(false);
+            setFlipStyle({});
+            setTransitioning(false);
+          }
+        }, 10); // Let DOM update
+      }, 10); // Duration matches transition
+    } else {
+      setTransitioning(true);
+      setTimeout(() => {
+        setShowGame(true);
+        setTransitioning(false);
+      }, 400); // Duration matches transition
+    }
   };
 
   const handleCloseGame = () => {
-    setTransitioning(true);
-    setTimeout(() => {
-      setShowGame(false);
-      setTransitioning(false);
-    }, 400);
+    if (!isMobile && infoCardRef.current) {
+      // FLIP: First - get initial position
+      const firstRect = infoCardRef.current.getBoundingClientRect();
+      setTransitioning(true);
+      setTimeout(() => {
+        setShowGame(false);
+        setTimeout(() => {
+          // FLIP: Last - get new position
+          if (infoCardRef.current) {
+            const lastRect = infoCardRef.current.getBoundingClientRect();
+            const deltaX = firstRect.left - lastRect.left;
+            const deltaY = firstRect.top - lastRect.top;
+            setFlipStyle({
+              transform: `translate(${deltaX}px, ${deltaY}px)`,
+              transition: 'none',
+              zIndex: 50,
+              position: 'relative',
+            });
+            setIsFlipping(true);
+            // Invert & Play
+            requestAnimationFrame(() => {
+              setFlipStyle({
+                transform: 'translate(0, 0)',
+                transition: 'transform 400ms cubic-bezier(0.4,0,0.2,1)',
+                zIndex: 50,
+                position: 'relative',
+              });
+            });
+            setTimeout(() => {
+              setIsFlipping(false);
+              setFlipStyle({});
+              setTransitioning(false);
+            }, 400);
+          } else {
+            setIsFlipping(false);
+            setFlipStyle({});
+            setTransitioning(false);
+          }
+        }, 10); // Let DOM update
+      }, 10);
+    } else {
+      setTransitioning(true);
+      setTimeout(() => {
+        setShowGame(false);
+        setTransitioning(false);
+      }, 400);
+    }
   };
 
   return (
@@ -270,7 +359,11 @@ const ShowcaseSection: React.FC = () => {
               </div>
             </div>
             {/* Game Info Panel */}
-            <div className="w-full lg:w-80">
+            <div
+              className="w-full lg:w-80"
+              ref={infoCardRef}
+              style={isFlipping ? flipStyle : undefined}
+            >
               <div className="glass-card rounded-2xl p-4 md:p-6 h-full">
                 {/* Game Icon and Title */}
                 <div className="flex items-center mb-4">

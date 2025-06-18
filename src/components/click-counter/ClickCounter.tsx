@@ -41,17 +41,18 @@ const ClickCounter: React.FC = () => {
   const clickSoundRef = useRef<HTMLAudioElement | null>(null);
   const announcerSoundRef = useRef<HTMLAudioElement | null>(null);
   const announcementTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const resetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     // Initialize click sound
     clickSoundRef.current = new Audio('music/click.mp3');
-    clickSoundRef.current.volume = 0.03;
+    clickSoundRef.current.volume = 0.1;
     // Preload the audio
     clickSoundRef.current.load();
 
     // Initialize announcer sound
     announcerSoundRef.current = new Audio();
-    announcerSoundRef.current.volume = 0.05;
+    announcerSoundRef.current.volume = 0.1;
   }, []);
 
   const playAnnouncerSound = async (threshold: number) => {
@@ -112,7 +113,23 @@ const ClickCounter: React.FC = () => {
     setIsShaking(true);
     setTimeout(() => setIsShaking(false), 500);
     playClickSound();
+    // Reset the reset-timer
+    if (resetTimeoutRef.current) {
+      clearTimeout(resetTimeoutRef.current);
+    }
+    resetTimeoutRef.current = setTimeout(() => {
+      setClickCount(0);
+    }, 500);
   };
+
+  // Cleanup reset timer on unmount
+  useEffect(() => {
+    return () => {
+      if (resetTimeoutRef.current) {
+        clearTimeout(resetTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="absolute top-4 left-4 z-20 flex flex-col items-start gap-2">

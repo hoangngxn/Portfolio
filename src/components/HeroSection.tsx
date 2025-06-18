@@ -1,24 +1,9 @@
 import React from 'react'
 import Image from 'next/image'
-import { Github, Linkedin, Mail, Download, Facebook, Youtube } from 'lucide-react'
+import { Github, Linkedin, Facebook, Youtube } from 'lucide-react'
 import profileImage from '../assets/images/profile.jpg'
 import BouncingLogos from './bouncing-logos/BouncingLogos'
 import ClickCounter from './click-counter/ClickCounter'
-
-const KILL_STREAKS = {
-  20: "DOUBLE KILL!",
-  40: "TRIPLE KILL!",
-  60: "ULTRA KILL!",
-  80: "RAMPAGE!",
-  100: "KILLING SPREE!",
-  120: "DOMINATING!",
-  140: "MEGA KILL!",
-  160: "UNSTOPPABLE!",
-  180: "WICKED SICK!",
-  200: "MONSTER KILL!",
-  220: "GODLIKE!",
-  240: "BEYOND GODLIKE!",
-};
 
 const HeroSection: React.FC = () => {
   return (
