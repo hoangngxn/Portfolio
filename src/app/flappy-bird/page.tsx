@@ -46,7 +46,7 @@ export default function FlappyBird() {
     // Prevent page scrolling
     e.preventDefault();
 
-    if (gameState === 'playing') {
+    if (!isDeadRef.current) {
       if (playerRef.current) {
         // If this is the first flap, record the time
         if (gameStartTime.current === 0) {
@@ -54,10 +54,10 @@ export default function FlappyBird() {
         }
         playerRef.current.jump();
       }
-    } else if (gameState === 'dead') {
-      // Go directly to playing state from death
-      setGameState('playing');
+    } else {
+      // Restart game when player presses space after death
       initGame();
+      setGameState('playing');
     }
   };
 
@@ -73,28 +73,24 @@ export default function FlappyBird() {
     const backgroundImage = ImageLoader.getImage('background');
     const baseImage = ImageLoader.getImage('base');
     
-    // Draw scrolling background
-    ctx.drawImage(backgroundImage, backgroundX.current, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    ctx.drawImage(backgroundImage, backgroundX.current + CANVAS_WIDTH, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    
-    // Draw scrolling base
-    const baseY = CANVAS_HEIGHT - BASE_HEIGHT;
-    ctx.drawImage(baseImage, baseX.current, baseY, CANVAS_WIDTH, BASE_HEIGHT);
-    ctx.drawImage(baseImage, baseX.current + CANVAS_WIDTH, baseY, CANVAS_WIDTH, BASE_HEIGHT);
-
     // Update scroll positions
     if (gameState === 'playing' && !isDeadRef.current) {
       backgroundX.current -= SCROLL_SPEED;
       baseX.current -= SCROLL_SPEED;
-
-      // Reset positions when they scroll off screen
-      if (backgroundX.current <= -CANVAS_WIDTH) {
-        backgroundX.current = 0;
-      }
-      if (baseX.current <= -CANVAS_WIDTH) {
-        baseX.current = 0;
-      }
     }
+
+    // Use modulo to create seamless looping
+    const backgroundOffset = ((backgroundX.current % CANVAS_WIDTH) + CANVAS_WIDTH) % CANVAS_WIDTH;
+    const baseOffset = ((baseX.current % CANVAS_WIDTH) + CANVAS_WIDTH) % CANVAS_WIDTH;
+    
+    // Draw scrolling background
+    ctx.drawImage(backgroundImage, backgroundOffset, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    ctx.drawImage(backgroundImage, backgroundOffset - CANVAS_WIDTH + 1, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    
+    // Draw scrolling base
+    const baseY = CANVAS_HEIGHT - BASE_HEIGHT;
+    ctx.drawImage(baseImage, baseOffset, baseY, CANVAS_WIDTH, BASE_HEIGHT);
+    ctx.drawImage(baseImage, baseOffset - CANVAS_WIDTH + 1, baseY, CANVAS_WIDTH, BASE_HEIGHT);
   };
 
   const gameLoop = (timestamp: number) => {
@@ -192,7 +188,7 @@ export default function FlappyBird() {
       // Clean up event listener
       window.removeEventListener('keydown', handleInput);
     };
-  }, [gameState]);
+  }, []);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-900 p-4">

@@ -18,8 +18,8 @@ export class Player {
     this.x = canvasWidth / 4;
     this.y = canvasHeight / 2;
     this.velocity = 0;
-    this.gravity = 0.03;
-    this.jumpForce = -2;
+    this.gravity = 0.02;
+    this.jumpForce = -1.75;
     this.canvasHeight = canvasHeight;
     this.isDead = false;
     this.isIdle = true;
@@ -30,13 +30,19 @@ export class Player {
       // Apply gravity only if not idle
       this.velocity += this.gravity;
       this.y += this.velocity;
+      
+      // Stop falling when hitting the ground (for death animation)
+      if (this.isDead && this.y + this.height >= this.canvasHeight) {
+        this.y = this.canvasHeight - this.height;
+        this.velocity = 0;
+      }
     }
   }
 
   checkCollision(): boolean {
     // Check collision with top boundary
     const topCollision = this.y <= 0;
-    // Check collision with bottom boundary (canvas height)
+    // Check collision with bottom boundary (ground/base level)
     const bottomCollision = this.y + this.height >= this.canvasHeight;
     
     return topCollision || bottomCollision;

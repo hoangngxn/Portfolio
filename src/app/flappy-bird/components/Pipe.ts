@@ -41,13 +41,16 @@ export class Pipe {
     ctx.drawImage(pipeImage, 0, 0, this.width, this.pipeHeight);
     ctx.restore();
 
-    // Draw bottom pipe
+    // Draw bottom pipe - calculate height to fill remaining space
+    const bottomPipeY = this.gapY + this.gapHeight;
+    const bottomPipeHeight = this.canvasHeight - bottomPipeY;
+    
     ctx.drawImage(
       pipeImage,
       this.x,
-      this.gapY + this.gapHeight,
+      bottomPipeY,
       this.width,
-      this.pipeHeight
+      bottomPipeHeight
     );
   }
 
