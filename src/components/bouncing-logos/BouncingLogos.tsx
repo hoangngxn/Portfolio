@@ -32,7 +32,10 @@ const DEFAULT_GRAVITY_Y = 0;
 const DEFAULT_RESTITUTION = 1.01;
 const DEFAULT_FRICTION_AIR = 0;
 
-const BouncingLogos: React.FC = () => {
+type BouncingLogosProps = {
+  profileCardRef?: React.RefObject<HTMLDivElement>;
+};
+const BouncingLogos: React.FC<BouncingLogosProps> = ({ profileCardRef }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [logos, setLogos] = useState<Logo[]>(initialLogos);
   const [isPaused, setIsPaused] = useState(() => {
@@ -55,6 +58,8 @@ const BouncingLogos: React.FC = () => {
   const engineRef = useRef<Matter.Engine | null>(null);
   const bodiesRef = useRef<{ [id: string]: Matter.Body }>({});
   const runnerRef = useRef<Matter.Runner | null>(null);
+  // Ref for the profile card obstacle body
+  const profileCardBodyRef = useRef<Matter.Body | null>(null);
 
   // --- Grab and throw state ---
   const [grabbedLogoId, setGrabbedLogoId] = useState<string | null>(null);
@@ -116,6 +121,24 @@ const BouncingLogos: React.FC = () => {
       Matter.Bodies.rectangle(width + wallThickness / 2, height / 2, wallThickness, height, { isStatic: true })
     ];
     Matter.World.add(engine.world, walls);
+
+    // Add static body for the profile card if ref is provided and card is visible
+    let profileCardBody: Matter.Body | null = null;
+    if (profileCardRef && profileCardRef.current) {
+      const cardRect = profileCardRef.current.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      // Calculate card position relative to container
+      const x = cardRect.left - containerRect.left + cardRect.width / 2;
+      const y = cardRect.top - containerRect.top + cardRect.height / 2;
+      // Always use a rounded rectangle with chamfer radius 24
+      profileCardBody = Matter.Bodies.rectangle(
+        x, y,
+        cardRect.width, cardRect.height,
+        { isStatic: true, chamfer: { radius: 24 }, label: 'profile-card' }
+      );
+      Matter.World.add(engine.world, profileCardBody);
+      profileCardBodyRef.current = profileCardBody;
+    }
 
     // Create bodies for each logo
     const bodies: { [id: string]: Matter.Body } = {};
@@ -179,6 +202,29 @@ const BouncingLogos: React.FC = () => {
     };
     sync();
 
+    // Listen for window resize to update profile card body
+    function handleResize() {
+      if (!engineRef.current || !profileCardRef || !profileCardRef.current || !containerRef.current) return;
+      // Remove old body
+      if (profileCardBodyRef.current) {
+        Matter.World.remove(engineRef.current.world, profileCardBodyRef.current);
+        profileCardBodyRef.current = null;
+      }
+      const cardRect = profileCardRef.current.getBoundingClientRect();
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const x = cardRect.left - containerRect.left + cardRect.width / 2;
+      const y = cardRect.top - containerRect.top + cardRect.height / 2;
+      // Always use a rounded rectangle with chamfer radius 24
+      let newBody = Matter.Bodies.rectangle(
+        x, y,
+        cardRect.width, cardRect.height,
+        { isStatic: true, chamfer: { radius: 24 }, label: 'profile-card' }
+      );
+      Matter.World.add(engineRef.current.world, newBody);
+      profileCardBodyRef.current = newBody;
+    }
+    window.addEventListener('resize', handleResize);
+
     return () => {
       cancelAnimationFrame(frameId);
       Matter.Runner.stop(runner);
@@ -187,9 +233,14 @@ const BouncingLogos: React.FC = () => {
       engineRef.current = null;
       runnerRef.current = null;
       bodiesRef.current = {};
+      if (profileCardBodyRef.current && engine.world) {
+        Matter.World.remove(engine.world, profileCardBodyRef.current);
+        profileCardBodyRef.current = null;
+      }
+      window.removeEventListener('resize', handleResize);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPaused, isMobile]);
+  }, [isPaused, isMobile, profileCardRef]);
 
   // Pause/resume Matter.js runner
   useEffect(() => {
@@ -329,7 +380,29 @@ const BouncingLogos: React.FC = () => {
         spawnX = Math.max(0, Math.min(spawnX, maxX));
         spawnY = Math.max(0, Math.min(spawnY, maxY));
       }
-      const newLogo = logoSpawn(isMobile, id, spawnX, spawnY);
+      // Prevent spawn inside profile card
+      let tries = 0;
+      let newLogo;
+      let overlapsProfileCard = false;
+      do {
+        newLogo = logoSpawn(isMobile, id, spawnX, spawnY);
+        overlapsProfileCard = false;
+        if (profileCardRef && profileCardRef.current && containerRef.current) {
+          const cardRect = profileCardRef.current.getBoundingClientRect();
+          const containerRect = containerRef.current.getBoundingClientRect();
+          const logoCenterX = newLogo.x + (isMobile ? CARD_SIZE_MOBILE : CARD_SIZE_DESKTOP) / 2;
+          const logoCenterY = newLogo.y + (isMobile ? CARD_SIZE_MOBILE : CARD_SIZE_DESKTOP) / 2;
+          const cardCenterX = cardRect.left - containerRect.left + cardRect.width / 2;
+          const cardCenterY = cardRect.top - containerRect.top + cardRect.height / 2;
+          const cardRadius = Math.min(cardRect.width, cardRect.height) / 2;
+          const logoRadius = (isMobile ? CARD_SIZE_MOBILE : CARD_SIZE_DESKTOP) / 2;
+          // If the logo center is within the card radius + logo radius, treat as overlap
+          const dist = Math.sqrt(Math.pow(logoCenterX - cardCenterX, 2) + Math.pow(logoCenterY - cardCenterY, 2));
+          if (dist < cardRadius + logoRadius + 4) overlapsProfileCard = true;
+        }
+        tries++;
+      } while (overlapsProfileCard && tries < 10);
+      if (overlapsProfileCard) return prev; // Give up if can't find a spot
       // Add Matter.js body for new logo
       if (engineRef.current && bodiesRef.current) {
         const cardSizePx = isMobile ? CARD_SIZE_MOBILE : CARD_SIZE_DESKTOP;

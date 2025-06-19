@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useRef } from 'react'
 import Image from 'next/image'
 import { Github, Linkedin, Facebook, Youtube } from 'lucide-react'
 import profileImage from '../assets/images/profile.jpg'
@@ -6,6 +6,7 @@ import BouncingLogos from './bouncing-logos/BouncingLogos'
 import ClickCounter from './click-counter/ClickCounter'
 
 const HeroSection: React.FC = () => {
+  const profileCardRef = useRef<HTMLDivElement>(null)
   return (
     <section className="h-screen flex items-center justify-center px-6 relative overflow-hidden snap-section" style={{
       backgroundImage: 'url(/pixels5.gif)',
@@ -13,10 +14,10 @@ const HeroSection: React.FC = () => {
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat'
     }}>
-      <BouncingLogos />
+      <BouncingLogos profileCardRef={profileCardRef} />
       <ClickCounter />
 
-      <div className="max-w-3xl mx-auto text-center relative z-10 glass-card rounded-2xl p-4 md:p-6 backdrop-blur-sm">
+      <div ref={profileCardRef} className="max-w-3xl mx-auto text-center relative z-10 glass-card rounded-2xl p-4 md:p-6 backdrop-blur-sm">
         {/* Profile Image */}
         <div className="glass-card rounded-full w-24 h-24 md:w-28 md:h-28 mx-auto mb-4 md:mb-6 flex items-center justify-center floating-animation">
           <div className="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500 rounded-full flex items-center justify-center text-2xl font-bold text-white overflow-hidden relative">
