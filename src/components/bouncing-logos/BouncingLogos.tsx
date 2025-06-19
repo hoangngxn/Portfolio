@@ -356,7 +356,7 @@ const BouncingLogos: React.FC = () => {
             if (collapseTimeoutRef.current) clearTimeout(collapseTimeoutRef.current);
             collapseTimeoutRef.current = setTimeout(() => {
               setSettingsOpen(false);
-            }, 500);
+            }, 300);
           }}
         >
           <button
@@ -368,7 +368,7 @@ const BouncingLogos: React.FC = () => {
           </button>
           {/* Expandable settings panel, absolutely positioned to the left of the button */}
           <div
-            className={`absolute top-0 right-full mr-2 z-50 transition-all duration-300 ${settingsOpen ? 'w-64 h-64 opacity-100' : 'w-0 h-0 opacity-0 pointer-events-none'} glass-card rounded-xl flex flex-col items-start justify-start overflow-hidden`}
+            className={`absolute top-0 right-full mr-2 z-50 transition-all duration-500 ${settingsOpen ? 'w-64 h-64 opacity-100' : 'w-0 h-0 opacity-0 pointer-events-none'} glass-card rounded-xl flex flex-col items-start justify-start overflow-hidden`}
             style={{ boxShadow: '0 2px 16px 0 #0002' }}
           >
             {settingsOpen && (
@@ -377,15 +377,15 @@ const BouncingLogos: React.FC = () => {
                   <span className="font-semibold text-base">Physics</span>
                 </div>
                 <label className="flex flex-col text-xs font-medium w-full">
-                  Gravity: <span className="text-xs text-gray-500">{gravityY.toFixed(2)}</span>
+                  Gravity <span className="text-xs text-gray-500">{gravityY.toFixed(2)}</span>
                   <input type="range" min={0} max={1} step={0.01} value={gravityY} onChange={e => setGravityY(Number(e.target.value))} className="w-full" />
                 </label>
                 <label className="flex flex-col text-xs font-medium w-full">
-                  Restitution: <span className="text-xs text-gray-500">{restitution.toFixed(2)}</span>
+                  Restitution (Bounciness) <span className="text-xs text-gray-500">{restitution.toFixed(2)}</span>
                   <input type="range" min={0} max={1.5} step={0.01} value={restitution} onChange={e => setRestitution(Number(e.target.value))} className="w-full" />
                 </label>
                 <label className="flex flex-col text-xs font-medium w-full">
-                  Friction Air: <span className="text-xs text-gray-500">{frictionAir.toFixed(2)}</span>
+                  Friction Air (Air Resistance) <span className="text-xs text-gray-500">{frictionAir.toFixed(2)}</span>
                   <input type="range" min={0} max={1} step={0.01} value={frictionAir} onChange={e => setFrictionAir(Number(e.target.value))} className="w-full" />
                 </label>
               </div>

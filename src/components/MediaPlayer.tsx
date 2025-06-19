@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import { Volume2, VolumeX, Play, Pause, ChevronDown } from 'lucide-react'
-import { Slider } from '@/components/ui/slider'
 import { useToast } from "@/hooks/use-toast"
 
 const MediaPlayer: React.FC = () => {
@@ -216,12 +215,14 @@ const MediaPlayer: React.FC = () => {
               >
                 {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
               </button>
-              <div className="w-24">
-                <Slider
-                  value={[volume]}
-                  onValueChange={handleVolumeChange}
+              <div className="w-24 flex items-center">
+                <input
+                  type="range"
+                  min={0}
                   max={1}
                   step={0.01}
+                  value={volume}
+                  onChange={e => handleVolumeChange([parseFloat(e.target.value)])}
                   className="w-full"
                   onClick={e => e.stopPropagation()}
                 />
