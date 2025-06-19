@@ -18,7 +18,7 @@ const BouncingLogos: React.FC = () => {
   const [isMuted, setIsMuted] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('bouncingLogos-muted');
-      return saved !== null ? saved === 'true' : false;
+      return saved !== null ? saved === 'true' : true;
     }
     return true;
   });
@@ -37,10 +37,14 @@ const BouncingLogos: React.FC = () => {
   }, [isPaused, isMuted]);
 
   useEffect(() => {
-    // Initialize hit sound
-    hitSoundRef.current = new Audio('/music/hitsound.mp3');
-    hitSoundRef.current.volume = 0.03;
-  }, []);
+    // Initialize hit sound only if not muted
+    if (!isMuted && !hitSoundRef.current) {
+      hitSoundRef.current = new Audio('/music/hitsound.mp3');
+      hitSoundRef.current.volume = 0.03;
+    } else if (isMuted && hitSoundRef.current) {
+      hitSoundRef.current = null;
+    }
+  }, [isMuted]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -68,7 +72,8 @@ const BouncingLogos: React.FC = () => {
             _newY: logo.y + vy,
             _hitWall: false,
             _hitCursor: false,
-            _lastMouseCollision: (logo as any).lastMouseCollision || 0
+            _lastMouseCollision: (logo as any).lastMouseCollision || 0,
+            _lastWallCollision: (logo as any).lastWallCollision || 0
           };
         });
 
@@ -120,21 +125,24 @@ const BouncingLogos: React.FC = () => {
 
         // Now process wall/cursor collisions and convert back to speed/direction
         return updated.map((logo, idx) => {
-          let { _vx: vx, _vy: vy, _newX: newX, _newY: newY, _lastMouseCollision: lastMouseCollision } = logo;
+          let { _vx: vx, _vy: vy, _newX: newX, _newY: newY, _lastMouseCollision: lastMouseCollision, _lastWallCollision: lastWallCollision } = logo;
           let hitWall = false;
           let hitCursor = false;
           let newLastMouseCollision = lastMouseCollision;
+          let newLastWallCollision = lastWallCollision;
 
           // Boundary checks with responsive size
           if (newX <= 0 || newX >= container.clientWidth - cardSizePx) {
             vx = -vx * bounciness;
             newX = Math.max(0, Math.min(newX, container.clientWidth - cardSizePx));
             hitWall = true;
+            newLastWallCollision = performance.now();
           }
           if (newY <= 0 || newY >= container.clientHeight - cardSizePx) {
             vy = -vy * bounciness;
             newY = Math.max(0, Math.min(newY, container.clientHeight - cardSizePx));
             hitWall = true;
+            newLastWallCollision = performance.now();
           }
 
           // Cursor collision detection (using ref)
@@ -187,8 +195,18 @@ const BouncingLogos: React.FC = () => {
 
           // Play hit sound if wall or cursor was hit and not muted
           if ((hitWall || hitCursor) && hitSoundRef.current && !isMuted) {
-            hitSoundRef.current.currentTime = 0;
-            hitSoundRef.current.play().catch(err => console.log('Error playing sound:', err));
+            const now = performance.now();
+            const canPlayWallSound = !hitWall || (now - lastWallCollision > 200);
+            const canPlayCursorSound = !hitCursor || (now - lastMouseCollision > 100);
+            
+            // Only play sound if logo has meaningful velocity (not stationary)
+            const velocity = Math.sqrt(vx * vx + vy * vy);
+            const hasMeaningfulMovement = velocity > 0.1; // Threshold for "moving"
+            
+            if (canPlayWallSound && canPlayCursorSound && hasMeaningfulMovement) {
+              hitSoundRef.current.currentTime = 0;
+              hitSoundRef.current.play().catch(err => console.log('Error playing sound:', err));
+            }
           }
 
           // Apply resistance (friction)
@@ -205,7 +223,8 @@ const BouncingLogos: React.FC = () => {
             y: newY,
             speed: newSpeed,
             direction: newDirection,
-            lastMouseCollision: newLastMouseCollision
+            lastMouseCollision: newLastMouseCollision,
+            lastWallCollision: newLastWallCollision
           };
         });
       });
