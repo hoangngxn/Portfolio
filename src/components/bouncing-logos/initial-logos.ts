@@ -1,9 +1,8 @@
 import { Logo } from './types';
 
-// Global constants for glass-card sizes only
+// Original glass-card sizes
 export const GLASS_CARD_SIZE_MOBILE = 'w-12 h-12'; // 48px
 export const GLASS_CARD_SIZE_DESKTOP = 'w-16 h-16'; // 64px
-
 
 // Function to get random coordinates within screen bounds
 const getRandomCoordinates = (isMobile: boolean) => {
@@ -23,99 +22,110 @@ const getRandomSpeed = () => 2 + Math.random() * 2; // 2 to 4
 // Function to get random direction in radians
 const getRandomDirection = () => Math.random() * Math.PI * 2;
 
+// Base logo definitions (original sizes)
+const baseLogos = [
+  {
+    src: '/logos/React.svg',
+    alt: 'React Logo',
+    width: 28, // mobile
+    height: 28,
+    className: 'w-7 h-7', // mobile
+    widthDesktop: 40,
+    heightDesktop: 40,
+    classNameDesktop: 'w-10 h-10',
+  },
+  {
+    src: '/logos/TypeScript.svg',
+    alt: 'TypeScript Logo',
+    width: 24,
+    height: 24,
+    className: 'w-6 h-6',
+    widthDesktop: 32,
+    heightDesktop: 32,
+    classNameDesktop: 'w-8 h-8',
+  },
+  {
+    src: '/logos/JavaScript.png',
+    alt: 'JavaScript Logo',
+    width: 24,
+    height: 24,
+    className: 'w-6 h-6',
+    widthDesktop: 36,
+    heightDesktop: 36,
+    classNameDesktop: 'w-9 h-9',
+  },
+  {
+    src: '/logos/Java.svg',
+    alt: 'Java Logo',
+    width: 24,
+    height: 24,
+    className: 'w-7 h-7',
+    widthDesktop: 40,
+    heightDesktop: 40,
+    classNameDesktop: 'w-10 h-10',
+  },
+  {
+    src: '/logos/Python.svg',
+    alt: 'Python Logo',
+    width: 26,
+    height: 26,
+    className: 'w-6.5 h-6.5',
+    widthDesktop: 38,
+    heightDesktop: 38,
+    classNameDesktop: 'w-9.5 h-9.5',
+  },
+  {
+    src: '/logos/Rust.svg',
+    alt: 'Rust Logo',
+    width: 22,
+    height: 22,
+    className: 'w-5.5 h-5.5',
+    widthDesktop: 34,
+    heightDesktop: 34,
+    classNameDesktop: 'w-8.5 h-8.5',
+  },
+  {
+    src: '/logos/CSS3.svg',
+    alt: 'CSS3 Logo',
+    width: 24,
+    height: 24,
+    className: 'w-6 h-6',
+    widthDesktop: 32,
+    heightDesktop: 32,
+    classNameDesktop: 'w-8 h-8',
+  },
+  {
+    src: '/logos/HTML5.svg',
+    alt: 'HTML5 Logo',
+    width: 24,
+    height: 24,
+    className: 'w-6 h-6',
+    widthDesktop: 32,
+    heightDesktop: 32,
+    classNameDesktop: 'w-8 h-8',
+  },
+];
+
 // Function to generate initial logos with responsive coordinates
 const generateInitialLogos = (): Logo[] => {
   const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
-  return [
-    {
-      id: 'logo-0',
-      src: '/logos/React.svg',
-      alt: 'React Logo',
-      width: isMobile ? 28 : 40,
-      height: isMobile ? 28 : 40,
-      className: isMobile ? 'w-7 h-7' : 'w-10 h-10',
-      speed: getRandomSpeed(),
-      direction: getRandomDirection(),
-      ...getRandomCoordinates(isMobile)
-    },
-    {
-      id: 'logo-1',
-      src: '/logos/TypeScript.svg',
-      alt: 'TypeScript Logo',
-      width: isMobile ? 24 : 32,
-      height: isMobile ? 24 : 32,
-      className: isMobile ? 'w-6 h-6' : 'w-8 h-8',
-      speed: getRandomSpeed(),
-      direction: getRandomDirection(),
-      ...getRandomCoordinates(isMobile)
-    },
-    {
-      id: 'logo-2',
-      src: '/logos/JavaScript.png',
-      alt: 'JavaScript Logo',
-      width: isMobile ? 24 : 36,
-      height: isMobile ? 24 : 36,
-      className: isMobile ? 'w-6 h-6' : 'w-9 h-9',
-      speed: getRandomSpeed(),
-      direction: getRandomDirection(),
-      ...getRandomCoordinates(isMobile)
-    },
-    {
-      id: 'logo-3',
-      src: '/logos/Java.svg',
-      alt: 'Java Logo',
-      width: isMobile ? 24 : 40,
-      height: isMobile ? 24 : 40,
-      className: isMobile ? 'w-7 h-7' : 'w-10 h-10',
-      speed: getRandomSpeed(),
-      direction: getRandomDirection(),
-      ...getRandomCoordinates(isMobile)
-    },
-    {
-      id: 'logo-4',
-      src: '/logos/Python.svg',
-      alt: 'Python Logo',
-      width: isMobile ? 26 : 38,
-      height: isMobile ? 26 : 38,
-      className: isMobile ? 'w-6.5 h-6.5' : 'w-9.5 h-9.5',
-      speed: getRandomSpeed(),
-      direction: getRandomDirection(),
-      ...getRandomCoordinates(isMobile)
-    },
-    {
-      id: 'logo-5',
-      src: '/logos/Rust.svg',
-      alt: 'Rust Logo',
-      width: isMobile ? 22 : 34,
-      height: isMobile ? 22 : 34,
-      className: isMobile ? 'w-5.5 h-5.5' : 'w-8.5 h-8.5',
-      speed: getRandomSpeed(),
-      direction: getRandomDirection(),
-      ...getRandomCoordinates(isMobile)
-    },
-    {
-      id: 'logo-6',
-      src: '/logos/CSS3.svg',
-      alt: 'CSS3 Logo',
-      width: isMobile ? 24 : 32,
-      height: isMobile ? 24 : 32,
-      className: isMobile ? 'w-6 h-6' : 'w-8 h-8',
-      speed: getRandomSpeed(),
-      direction: getRandomDirection(),
-      ...getRandomCoordinates(isMobile)
-    },
-    {
-      id: 'logo-7',
-      src: '/logos/HTML5.svg',
-      alt: 'HTML5 Logo',
-      width: isMobile ? 24 : 32,
-      height: isMobile ? 24 : 32,
-      className: isMobile ? 'w-6 h-6' : 'w-8 h-8',
-      speed: getRandomSpeed(),
-      direction: getRandomDirection(),
-      ...getRandomCoordinates(isMobile)
-    }
-  ];
+  const logos: Logo[] = [];
+  for (let repeat = 0; repeat < 3; repeat++) {
+    baseLogos.forEach((base, idx) => {
+      logos.push({
+        id: `logo-${repeat * baseLogos.length + idx}`,
+        src: base.src,
+        alt: base.alt,
+        width: isMobile ? base.width : base.widthDesktop,
+        height: isMobile ? base.height : base.heightDesktop,
+        className: isMobile ? base.className : base.classNameDesktop,
+        speed: getRandomSpeed(),
+        direction: getRandomDirection(),
+        ...getRandomCoordinates(isMobile)
+      });
+    });
+  }
+  return logos;
 };
 
 // Export the generated logos

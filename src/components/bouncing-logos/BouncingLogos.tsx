@@ -6,7 +6,6 @@ import { useMouseVelocity } from './use-mouse-velocity';
 
 const BouncingLogos: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const hitSoundRef = useRef<HTMLAudioElement | null>(null);
   const [logos, setLogos] = useState<Logo[]>(initialLogos);
   const [isPaused, setIsPaused] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -15,36 +14,22 @@ const BouncingLogos: React.FC = () => {
     }
     return false;
   });
-  const [isMuted, setIsMuted] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('bouncingLogos-muted');
-      return saved !== null ? saved === 'true' : true;
-    }
-    return true;
-  });
   const { cursor, cursorRef, mouseVelocityRef } = useMouseVelocity(containerRef);
   const speedMultiplier = 1; // Slows down the overall movement
   const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
   const CURSOR_HITBOX_SIZE = 24; // px
   const GRAVITY = 0.01;
 
-  // Save to localStorage when isPaused or isMuted changes
+  // --- Smoothed cursor position ---
+  const smoothedCursorRef = useRef<{ x: number; y: number } | null>(null);
+  const SMOOTHING = 0.5; // 0 = no movement, 1 = instant snap
+
+  // Save to localStorage when isPaused changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('bouncingLogos-paused', isPaused.toString());
-      localStorage.setItem('bouncingLogos-muted', isMuted.toString());
     }
-  }, [isPaused, isMuted]);
-
-  useEffect(() => {
-    // Initialize hit sound only if not muted
-    if (!isMuted && !hitSoundRef.current) {
-      hitSoundRef.current = new Audio('/music/hitsound.mp3');
-      hitSoundRef.current.volume = 0.03;
-    } else if (isMuted && hitSoundRef.current) {
-      hitSoundRef.current = null;
-    }
-  }, [isMuted]);
+  }, [isPaused]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -57,6 +42,18 @@ const BouncingLogos: React.FC = () => {
 
     const animate = () => {
       if (isPaused) return;
+
+      // --- Smooth the cursor position ---
+      if (cursorRef.current) {
+        if (!smoothedCursorRef.current) {
+          smoothedCursorRef.current = { ...cursorRef.current };
+        } else {
+          smoothedCursorRef.current.x += (cursorRef.current.x - smoothedCursorRef.current.x) * SMOOTHING;
+          smoothedCursorRef.current.y += (cursorRef.current.y - smoothedCursorRef.current.y) * SMOOTHING;
+        }
+      } else {
+        smoothedCursorRef.current = null;
+      }
 
       setLogos(prevLogos => {
         // First, update all positions and velocities
@@ -145,8 +142,8 @@ const BouncingLogos: React.FC = () => {
             newLastWallCollision = performance.now();
           }
 
-          // Cursor collision detection (using ref)
-          const cursorPos = cursorRef.current;
+          // Cursor collision detection (using smoothed ref)
+          const cursorPos = smoothedCursorRef.current;
           if (cursorPos) {
             const logoLeft = newX;
             const logoRight = newX + cardSizePx;
@@ -165,7 +162,7 @@ const BouncingLogos: React.FC = () => {
             ) {
               // Only allow collision if cooldown has passed
               const now = performance.now();
-              if (now - lastMouseCollision > 100) {
+              if (now - lastMouseCollision > 500) { //cooldown
                 const overlapX = Math.min(logoRight, cursorRight) - Math.max(logoLeft, cursorLeft);
                 const overlapY = Math.min(logoBottom, cursorBottom) - Math.max(logoTop, cursorTop);
                 if (overlapX < overlapY) {
@@ -184,28 +181,12 @@ const BouncingLogos: React.FC = () => {
                   }
                 }
                 if (mouseVelocityRef.current) {
-                  vx += mouseVelocityRef.current.vx * 0.005;
-                  vy += mouseVelocityRef.current.vy * 0.005;
+                  vx += mouseVelocityRef.current.vx * 0.003;
+                  vy += mouseVelocityRef.current.vy * 0.003;
                 }
                 hitCursor = true;
                 newLastMouseCollision = now;
               }
-            }
-          }
-
-          // Play hit sound if wall or cursor was hit and not muted
-          if ((hitWall || hitCursor) && hitSoundRef.current && !isMuted) {
-            const now = performance.now();
-            const canPlayWallSound = !hitWall || (now - lastWallCollision > 200);
-            const canPlayCursorSound = !hitCursor || (now - lastMouseCollision > 100);
-            
-            // Only play sound if logo has meaningful velocity (not stationary)
-            const velocity = Math.sqrt(vx * vx + vy * vy);
-            const hasMeaningfulMovement = velocity > 0.1; // Threshold for "moving"
-            
-            if (canPlayWallSound && canPlayCursorSound && hasMeaningfulMovement) {
-              hitSoundRef.current.currentTime = 0;
-              hitSoundRef.current.play().catch(err => console.log('Error playing sound:', err));
             }
           }
 
@@ -237,7 +218,7 @@ const BouncingLogos: React.FC = () => {
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isPaused, isMuted, isMobile]);
+  }, [isPaused, isMobile]);
 
   return (
     <div ref={containerRef} className="absolute inset-0 overflow-hidden bg-black/50">
@@ -255,21 +236,6 @@ const BouncingLogos: React.FC = () => {
           ) : (
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-          )}
-        </button>
-        <button
-          onClick={() => setIsMuted(!isMuted)}
-          className="glass-card p-2 rounded-lg hover:bg-white/20 transition-colors"
-          title={isMuted ? "Unmute Sound" : "Mute Sound"}
-        >
-          {isMuted ? (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM12.293 7.293a1 1 0 011.414 0L15 8.586l1.293-1.293a1 1 0 111.414 1.414L16.414 10l1.293 1.293a1 1 0 01-1.414 1.414L15 11.414l-1.293 1.293a1 1 0 01-1.414-1.414L13.586 10l-1.293-1.293a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd" />
             </svg>
           )}
         </button>
@@ -295,12 +261,12 @@ const BouncingLogos: React.FC = () => {
         </div>
       ))}
       {/* Draw cursor hitbox for debugging/visual feedback */}
-      {/* {cursor && (
+      {smoothedCursorRef.current && (
         <div
           className="absolute border-2 border-pink-500 pointer-events-none z-50"
           style={{
-            left: cursor.x - CURSOR_HITBOX_SIZE / 2,
-            top: cursor.y - CURSOR_HITBOX_SIZE / 2,
+            left: smoothedCursorRef.current.x - CURSOR_HITBOX_SIZE / 2,
+            top: smoothedCursorRef.current.y - CURSOR_HITBOX_SIZE / 2,
             width: CURSOR_HITBOX_SIZE,
             height: CURSOR_HITBOX_SIZE,
             borderRadius: 8,
@@ -308,7 +274,7 @@ const BouncingLogos: React.FC = () => {
             background: 'rgba(255,0,128,0.08)'
           }}
         />
-      )} */}
+      )}
     </div>
   );
 };
