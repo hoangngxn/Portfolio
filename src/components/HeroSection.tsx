@@ -41,8 +41,8 @@ const HeroSection: React.FC = () => {
         
         {/* Description */}
         <p className="text-sm md:text-base max-w-xl mx-auto mb-4 md:mb-6 leading-relaxed fade-in-up" style={{ animationDelay: '400ms' }}>
-          Crafting reliable and scalable digital systems with a focus on performance, 
-          security, and clean architecture. Driven by curiosity and a passion for solving real-world problems through thoughtful engineering.
+          I build things that (usually) work. If it compiles, I'm probably shipping it.<br />
+          <span className="text-muted-foreground">But seriously, I care about clean code and making stuff that doesn't crash... most of the time.</span>
         </p>
 
         {/* Social Links */}

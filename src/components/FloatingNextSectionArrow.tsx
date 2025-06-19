@@ -39,10 +39,26 @@ const FloatingNextSectionArrow: React.FC = () => {
 
   return (
     <>
-      <style>{flyUpDown}</style>
-      <div className="fixed bottom-6 left-6 z-50 pointer-events-none">
+      <style>{flyUpDown}
+      {`
+        @keyframes fade-in-pulse {
+          0% { opacity: 0.5; }
+          50% { opacity: 1; }
+          100% { opacity: 0.5; }
+        }
+      `}</style>
+      <div className="fixed bottom-6 left-6 z-50 pointer-events-none flex flex-col items-center">
+        <div
+          className="glass-card backdrop-blur-sm rounded-xl px-3 py-1 mb-2 pointer-events-auto"
+          style={{ animation: 'fade-in-pulse 2.2s ease-in-out infinite' }}
+          aria-hidden="true"
+        >
+          <span className="text-xs md:text-sm text-primary font-medium select-none">
+            SCROLL DOWN FOR MORE
+          </span>
+        </div>
         <button
-          className="glass-card rounded-full p-3 shadow-lg cursor-pointer hover:scale-110 transition-transform pointer-events-auto"
+          className="glass-card rounded-xl p-3 shadow-lg cursor-pointer hover:scale-110 transition-transform pointer-events-auto"
           style={{ animation: 'fly-up-down 1.6s ease-in-out infinite' }}
           aria-label="Scroll to next section"
           onClick={handleArrowClick}
