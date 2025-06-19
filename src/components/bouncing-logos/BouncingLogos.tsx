@@ -3,6 +3,33 @@ import Image from 'next/image';
 import { Logo } from './types';
 import { initialLogos, GLASS_CARD_SIZE_MOBILE, GLASS_CARD_SIZE_DESKTOP, logoSpawn } from './initial-logos';
 import { useMouseVelocity } from './use-mouse-velocity';
+import Matter from 'matter-js';
+
+// =============================
+// Bouncing Logos Custom Settings
+// =============================
+
+// Logo card sizes (in px)
+const CARD_SIZE_MOBILE = 48;
+const CARD_SIZE_DESKTOP = 64;
+
+// Throw/Grab settings
+const THROW_SCALE = 0.005; // How much of the mouse velocity to apply to the throw
+const THROW_AVG_WINDOW = 100; // ms, time window for averaging mouse velocity
+
+// Physics (handled by matter.js now)
+const MATTER_GRAVITY_Y = 0;
+const MATTER_RESTITUTION = 1.1; // bounciness
+const MATTER_FRICTION_AIR = 0; // air resistance
+
+// Smoothing for grab follow
+const GRAB_SMOOTHING = 0.4; // 0 = no movement, 1 = instant snap
+
+// Z-index for grabbed logo
+const GRABBED_Z_INDEX = 50;
+
+// Box shadow for grabbed logo
+const GRABBED_BOX_SHADOW = '0 0 0 2px #fff8';
 
 const BouncingLogos: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -14,26 +41,24 @@ const BouncingLogos: React.FC = () => {
     }
     return false;
   });
-  const { cursor, cursorRef, mouseVelocityRef } = useMouseVelocity(containerRef);
-  const speedMultiplier = 1; // Slows down the overall movement
+  const { cursor, cursorRef, mouseVelocityRef, getRecentAverageVelocity } = useMouseVelocity(containerRef);
   const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
-  const CURSOR_HITBOX_SIZE = 24; // px
-  const GRAVITY = 0;
-
-  // --- Smoothed cursor position for grab only ---
-  const SMOOTHING = 0.3; // 0 = no movement, 1 = instant snap
-
-  // --- Grab and throw state ---
-  const [grabbedLogoId, setGrabbedLogoId] = useState<string | null>(null);
-  const grabOffsetRef = useRef<{ x: number; y: number } | null>(null);
-  const smoothedGrabPosRef = useRef<{ x: number; y: number } | null>(null);
-  const isMouseDownRef = useRef(false);
 
   // For unique logo ids
   const nextLogoIdRef = useRef(initialLogos.length);
 
   // Add a ref for the spawn button
   const spawnButtonRef = useRef<HTMLButtonElement>(null);
+
+  // --- Matter.js engine/world/bodies ---
+  const engineRef = useRef<Matter.Engine | null>(null);
+  const bodiesRef = useRef<{ [id: string]: Matter.Body }>({});
+  const runnerRef = useRef<Matter.Runner | null>(null);
+
+  // --- Grab and throw state ---
+  const [grabbedLogoId, setGrabbedLogoId] = useState<string | null>(null);
+  const grabOffsetRef = useRef<{ x: number; y: number } | null>(null);
+  const isMouseDownRef = useRef(false);
 
   // Save to localStorage when isPaused changes
   useEffect(() => {
@@ -42,23 +67,116 @@ const BouncingLogos: React.FC = () => {
     }
   }, [isPaused]);
 
-  // Mouse event handlers for grab/throw
+  // Initialize Matter.js engine/world and create bodies for logos
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const container = containerRef.current;
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    // Create engine and world
+    const engine = Matter.Engine.create();
+    engine.gravity.y = MATTER_GRAVITY_Y;
+    engineRef.current = engine;
+
+    // Create walls
+    const wallThickness = 100;
+    const cardSizePx = isMobile ? CARD_SIZE_MOBILE : CARD_SIZE_DESKTOP;
+    const walls = [
+      // top
+      Matter.Bodies.rectangle(width / 2, -wallThickness / 2, width, wallThickness, { isStatic: true }),
+      // bottom
+      Matter.Bodies.rectangle(width / 2, height + wallThickness / 2, width, wallThickness, { isStatic: true }),
+      // left
+      Matter.Bodies.rectangle(-wallThickness / 2, height / 2, wallThickness, height, { isStatic: true }),
+      // right
+      Matter.Bodies.rectangle(width + wallThickness / 2, height / 2, wallThickness, height, { isStatic: true })
+    ];
+    Matter.World.add(engine.world, walls);
+
+    // Create bodies for each logo
+    const bodies: { [id: string]: Matter.Body } = {};
+    logos.forEach(logo => {
+      const body = Matter.Bodies.circle(
+        logo.x + cardSizePx / 2,
+        logo.y + cardSizePx / 2,
+        cardSizePx / 2,
+        {
+          restitution: MATTER_RESTITUTION,
+          frictionAir: MATTER_FRICTION_AIR,
+          label: logo.id,
+        }
+      );
+      // Set initial velocity from logo vector
+      const vx = Math.cos(logo.direction) * logo.speed;
+      const vy = Math.sin(logo.direction) * logo.speed;
+      Matter.Body.setVelocity(body, { x: vx, y: vy });
+      bodies[logo.id] = body;
+      Matter.World.add(engine.world, body);
+    });
+    bodiesRef.current = bodies;
+
+    // Start the engine runner
+    const runner = Matter.Runner.create();
+    runnerRef.current = runner;
+    if (!isPaused) Matter.Runner.run(runner, engine);
+
+    // Animation loop: sync Matter.js body positions to React state
+    let frameId: number;
+    const sync = () => {
+      setLogos(prev =>
+        prev.map(logo => {
+          const body = bodiesRef.current[logo.id];
+          if (!body) return logo;
+          const cardSizePx = isMobile ? CARD_SIZE_MOBILE : CARD_SIZE_DESKTOP;
+          return {
+            ...logo,
+            x: body.position.x - cardSizePx / 2,
+            y: body.position.y - cardSizePx / 2,
+          };
+        })
+      );
+      frameId = requestAnimationFrame(sync);
+    };
+    sync();
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      Matter.Runner.stop(runner);
+      Matter.World.clear(engine.world, false);
+      Matter.Engine.clear(engine);
+      engineRef.current = null;
+      runnerRef.current = null;
+      bodiesRef.current = {};
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPaused, isMobile]);
+
+  // Pause/resume Matter.js runner
+  useEffect(() => {
+    if (runnerRef.current && engineRef.current) {
+      if (isPaused) {
+        Matter.Runner.stop(runnerRef.current);
+      } else {
+        Matter.Runner.run(runnerRef.current, engineRef.current);
+      }
+    }
+  }, [isPaused]);
+
+  // Handle grab and throw
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-
-    const cardSizePx = isMobile ? 48 : 64;
+    const cardSizePx = isMobile ? CARD_SIZE_MOBILE : CARD_SIZE_DESKTOP;
 
     function getLogoAtPos(x: number, y: number) {
-      // Find topmost logo under the mouse
       for (let i = logos.length - 1; i >= 0; i--) {
         const logo = logos[i];
-        if (
-          x >= logo.x &&
-          x <= logo.x + cardSizePx &&
-          y >= logo.y &&
-          y <= logo.y + cardSizePx
-        ) {
+        const cx = logo.x + cardSizePx / 2;
+        const cy = logo.y + cardSizePx / 2;
+        const dx = x - cx;
+        const dy = y - cy;
+        if (Math.sqrt(dx * dx + dy * dy) <= cardSizePx / 2) {
           return logo;
         }
       }
@@ -82,9 +200,13 @@ const BouncingLogos: React.FC = () => {
       const logo = getLogoAtPos(x, y);
       if (logo) {
         setGrabbedLogoId(logo.id);
-        grabOffsetRef.current = { x: x - logo.x, y: y - logo.y };
-        smoothedGrabPosRef.current = { x: logo.x, y: logo.y };
+        grabOffsetRef.current = { x: x - (logo.x + cardSizePx / 2), y: y - (logo.y + cardSizePx / 2) };
         isMouseDownRef.current = true;
+        // Make body static while grabbed
+        const body = bodiesRef.current[logo.id];
+        if (body) {
+          Matter.Body.setStatic(body, true);
+        }
         e.preventDefault();
       }
     }
@@ -103,30 +225,33 @@ const BouncingLogos: React.FC = () => {
       const rect = container.getBoundingClientRect();
       const x = clientX - rect.left;
       const y = clientY - rect.top;
-      if (grabOffsetRef.current && smoothedGrabPosRef.current) {
-        // Smoothly follow mouse
-        smoothedGrabPosRef.current.x += ((x - grabOffsetRef.current.x) - smoothedGrabPosRef.current.x) * 0.4;
-        smoothedGrabPosRef.current.y += ((y - grabOffsetRef.current.y) - smoothedGrabPosRef.current.y) * 0.4;
+      if (grabbedLogoId && grabOffsetRef.current) {
+        const body = bodiesRef.current[grabbedLogoId];
+        if (body) {
+          Matter.Body.setPosition(body, {
+            x: x - grabOffsetRef.current.x,
+            y: y - grabOffsetRef.current.y,
+          });
+        }
       }
     }
 
     function handlePointerUp(e: MouseEvent | TouchEvent) {
       if (!grabbedLogoId) return;
-      // On release, set velocity based on mouse velocity
-      setLogos(prev => prev.map(logo => {
-        if (logo.id === grabbedLogoId && mouseVelocityRef.current) {
-          const scale = 0.005; // tune for feel
-          const vx = mouseVelocityRef.current.vx * scale;
-          const vy = mouseVelocityRef.current.vy * scale;
-          const speed = Math.sqrt(vx * vx + vy * vy);
-          const direction = Math.atan2(vy, vx);
-          return { ...logo, speed, direction };
+      // On release, set velocity based on average mouse velocity over last THROW_AVG_WINDOW ms
+      const body = bodiesRef.current[grabbedLogoId];
+      if (body) {
+        const avg = getRecentAverageVelocity ? getRecentAverageVelocity(THROW_AVG_WINDOW) : null;
+        const v = avg || mouseVelocityRef.current;
+        if (v) {
+          Matter.Body.setStatic(body, false);
+          Matter.Body.setVelocity(body, { x: v.vx * THROW_SCALE, y: v.vy * THROW_SCALE });
+        } else {
+          Matter.Body.setStatic(body, false);
         }
-        return logo;
-      }));
+      }
       setGrabbedLogoId(null);
       grabOffsetRef.current = null;
-      smoothedGrabPosRef.current = null;
       isMouseDownRef.current = false;
     }
 
@@ -146,156 +271,49 @@ const BouncingLogos: React.FC = () => {
       container.removeEventListener('touchmove', handlePointerMove);
       window.removeEventListener('touchend', handlePointerUp);
     };
-  }, [containerRef, logos, grabbedLogoId, isPaused, isMobile]);
+  }, [containerRef, logos, grabbedLogoId, isPaused, isMobile, getRecentAverageVelocity, mouseVelocityRef]);
 
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const container = containerRef.current;
-    let animationFrameId: number;
-
-    const resistance = 0.998; // friction per frame
-    const bounciness = 0.998; // energy loss on collision
-
-    const animate = () => {
-      if (isPaused) return;
-
-      setLogos(prevLogos => {
-        let updated = prevLogos.map(logo => {
-          // If grabbed, follow smoothed grab pos and do not add extra properties
-          if (logo.id === grabbedLogoId && smoothedGrabPosRef.current) {
-            return {
-              ...logo,
-              x: smoothedGrabPosRef.current.x,
-              y: smoothedGrabPosRef.current.y,
-              speed: 0,
-              direction: logo.direction,
-            };
-          } else if (logo.id === grabbedLogoId) {
-            // If grabbed but no smoothed pos, just return as-is
-            return logo;
+  // Handle spawn logo
+  function handleSpawnLogo() {
+    setLogos(prev => {
+      const id = `logo-${nextLogoIdRef.current++}`;
+      let spawnX: number | undefined = undefined;
+      let spawnY: number | undefined = undefined;
+      if (spawnButtonRef.current && containerRef.current) {
+        const buttonRect = spawnButtonRef.current.getBoundingClientRect();
+        const containerRect = containerRef.current.getBoundingClientRect();
+        spawnX = buttonRect.left - containerRect.left + buttonRect.width / 2 - (isMobile ? CARD_SIZE_MOBILE / 2 : CARD_SIZE_DESKTOP / 2);
+        spawnY = buttonRect.bottom - containerRect.top + 50;
+        // Clamp to container bounds
+        const maxX = containerRef.current.clientWidth - (isMobile ? CARD_SIZE_MOBILE : CARD_SIZE_DESKTOP);
+        const maxY = containerRef.current.clientHeight - (isMobile ? CARD_SIZE_MOBILE : CARD_SIZE_DESKTOP);
+        spawnX = Math.max(0, Math.min(spawnX, maxX));
+        spawnY = Math.max(0, Math.min(spawnY, maxY));
+      }
+      const newLogo = logoSpawn(isMobile, id, spawnX, spawnY);
+      // Add Matter.js body for new logo
+      if (engineRef.current && bodiesRef.current) {
+        const cardSizePx = isMobile ? CARD_SIZE_MOBILE : CARD_SIZE_DESKTOP;
+        const body = Matter.Bodies.circle(
+          newLogo.x + cardSizePx / 2,
+          newLogo.y + cardSizePx / 2,
+          cardSizePx / 2,
+          {
+            restitution: MATTER_RESTITUTION,
+            frictionAir: MATTER_FRICTION_AIR,
+            label: newLogo.id,
           }
-          let vx = Math.cos(logo.direction) * logo.speed * speedMultiplier;
-          let vy = Math.sin(logo.direction) * logo.speed * speedMultiplier;
-          vy += GRAVITY;
-          return {
-            ...logo,
-            _vx: vx,
-            _vy: vy,
-            _newX: logo.x + vx,
-            _newY: logo.y + vy,
-            _hitWall: false,
-            _hitCursor: false,
-            _lastMouseCollision: (logo as any).lastMouseCollision || 0,
-            _lastWallCollision: (logo as any).lastWallCollision || 0
-          };
-        });
-
-        // Split updated into grabbed and non-grabbed
-        const grabbed = updated.filter(l => l.id === grabbedLogoId);
-        type LogoWithPhysics = Logo & {
-          _vx: number;
-          _vy: number;
-          _newX: number;
-          _newY: number;
-          _hitWall: boolean;
-          _hitCursor: boolean;
-          _lastMouseCollision: number;
-          _lastWallCollision: number;
-        };
-        let nonGrabbed = updated.filter(l => l.id !== grabbedLogoId) as LogoWithPhysics[];
-
-        // Logo-to-logo collision (AABB, only process each pair once)
-        const cardSizePx = isMobile ? 48 : 64;
-        for (let i = 0; i < nonGrabbed.length - 1; i++) {
-          for (let j = i + 1; j < nonGrabbed.length; j++) {
-            const a = nonGrabbed[i];
-            const b = nonGrabbed[j];
-            if (
-              a._newX < b._newX + cardSizePx &&
-              a._newX + cardSizePx > b._newX &&
-              a._newY < b._newY + cardSizePx &&
-              a._newY + cardSizePx > b._newY
-            ) {
-              // Swap velocities (arcade style)
-              const tempVx = a._vx;
-              const tempVy = a._vy;
-              nonGrabbed[i]._vx = b._vx;
-              nonGrabbed[i]._vy = b._vy;
-              nonGrabbed[j]._vx = tempVx;
-              nonGrabbed[j]._vy = tempVy;
-              // Separate them so they don't stick
-              // Move each logo away from the other by half the overlap
-              const overlapX = Math.min(a._newX + cardSizePx, b._newX + cardSizePx) - Math.max(a._newX, b._newX);
-              const overlapY = Math.min(a._newY + cardSizePx, b._newY + cardSizePx) - Math.max(a._newY, b._newY);
-              if (overlapX < overlapY) {
-                if (a._newX < b._newX) {
-                  nonGrabbed[i]._newX -= overlapX / 2;
-                  nonGrabbed[j]._newX += overlapX / 2;
-                } else {
-                  nonGrabbed[i]._newX += overlapX / 2;
-                  nonGrabbed[j]._newX -= overlapX / 2;
-                }
-              } else {
-                if (a._newY < b._newY) {
-                  nonGrabbed[i]._newY -= overlapY / 2;
-                  nonGrabbed[j]._newY += overlapY / 2;
-                } else {
-                  nonGrabbed[i]._newY += overlapY / 2;
-                  nonGrabbed[j]._newY -= overlapY / 2;
-                }
-              }
-            }
-          }
-        }
-
-        // Now process wall collisions and convert back to speed/direction
-        nonGrabbed = nonGrabbed.map((logo, idx) => {
-          let { _vx: vx, _vy: vy, _newX: newX, _newY: newY, _lastWallCollision: lastWallCollision } = logo;
-          let hitWall = false;
-          let newLastWallCollision = lastWallCollision;
-          // Boundary checks with responsive size
-          if (newX <= 0 || newX >= container.clientWidth - cardSizePx) {
-            vx = -vx * bounciness;
-            newX = Math.max(0, Math.min(newX, container.clientWidth - cardSizePx));
-            hitWall = true;
-            newLastWallCollision = performance.now();
-          }
-          if (newY <= 0 || newY >= container.clientHeight - cardSizePx) {
-            vy = -vy * bounciness;
-            newY = Math.max(0, Math.min(newY, container.clientHeight - cardSizePx));
-            hitWall = true;
-            newLastWallCollision = performance.now();
-          }
-          // Apply resistance (friction)
-          vx *= resistance;
-          vy *= resistance;
-          // Convert velocity vector back to speed/direction
-          const newSpeed = Math.sqrt(vx * vx + vy * vy);
-          const newDirection = Math.atan2(vy, vx);
-          return {
-            ...logo,
-            x: newX,
-            y: newY,
-            speed: newSpeed,
-            direction: newDirection,
-            lastWallCollision: newLastWallCollision
-          };
-        });
-
-        // Merge grabbed and non-grabbed for final state
-        return [...nonGrabbed, ...grabbed];
-      });
-
-      animationFrameId = requestAnimationFrame(animate);
-    };
-
-    animate();
-
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, [isPaused, isMobile, grabbedLogoId]);
+        );
+        // Set initial velocity from logo vector
+        const vx = Math.cos(newLogo.direction) * newLogo.speed;
+        const vy = Math.sin(newLogo.direction) * newLogo.speed;
+        Matter.Body.setVelocity(body, { x: vx, y: vy });
+        bodiesRef.current[newLogo.id] = body;
+        Matter.World.add(engineRef.current.world, body);
+      }
+      return [...prev, newLogo];
+    });
+  }
 
   return (
     <div ref={containerRef} className="absolute inset-0 overflow-hidden bg-black/50">
@@ -326,27 +344,7 @@ const BouncingLogos: React.FC = () => {
         {/* Spawn Logo Button */}
         <div className="group relative flex items-center">
           <button
-            ref={spawnButtonRef}
-            onClick={() => {
-              setLogos(prev => {
-                const id = `logo-${nextLogoIdRef.current++}`;
-                let spawnX: number | undefined = undefined;
-                let spawnY: number | undefined = undefined;
-                if (spawnButtonRef.current && containerRef.current) {
-                  const buttonRect = spawnButtonRef.current.getBoundingClientRect();
-                  const containerRect = containerRef.current.getBoundingClientRect();
-                  spawnX = buttonRect.left - containerRect.left + buttonRect.width / 2 - (isMobile ? 24 : 32); // center logo
-                  spawnY = buttonRect.bottom - containerRect.top + 50; // 50px below button
-                  // Clamp to container bounds
-                  const maxX = containerRef.current.clientWidth - (isMobile ? 48 : 64);
-                  const maxY = containerRef.current.clientHeight - (isMobile ? 48 : 64);
-                  spawnX = Math.max(0, Math.min(spawnX, maxX));
-                  spawnY = Math.max(0, Math.min(spawnY, maxY));
-                }
-                const newLogo = logoSpawn(isMobile, id, spawnX, spawnY);
-                return [...prev, newLogo];
-              });
-            }}
+            onClick={handleSpawnLogo}
             className="glass-card p-2 rounded-lg hover:bg-green-400/20 flex items-center justify-between w-32"
             title="Spawn Logo"
           >
@@ -364,12 +362,12 @@ const BouncingLogos: React.FC = () => {
         <div
           key={logo.id}
           id={logo.id}
-          className={`absolute glass-card rounded-xl opacity-80 flex items-center justify-center ${isMobile ? GLASS_CARD_SIZE_MOBILE : GLASS_CARD_SIZE_DESKTOP} pointer-events-auto`}
+          className={`absolute glass-card rounded-full opacity-80 flex items-center justify-center ${isMobile ? GLASS_CARD_SIZE_MOBILE : GLASS_CARD_SIZE_DESKTOP} pointer-events-auto`}
           style={{
             transform: `translate(${logo.x}px, ${logo.y}px)`,
             transition: 'transform 16ms linear',
-            zIndex: logo.id === grabbedLogoId ? 50 : undefined,
-            boxShadow: logo.id === grabbedLogoId ? '0 0 0 2px #fff8' : undefined,
+            zIndex: logo.id === grabbedLogoId ? GRABBED_Z_INDEX : undefined,
+            boxShadow: logo.id === grabbedLogoId ? GRABBED_BOX_SHADOW : undefined,
             cursor: grabbedLogoId === logo.id ? 'grabbing' : 'grab',
           }}
         >
