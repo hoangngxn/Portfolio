@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
-import { Volume2, VolumeX, Play, Pause } from 'lucide-react'
+import { Volume2, VolumeX, Play, Pause, ChevronDown } from 'lucide-react'
 import { Slider } from '@/components/ui/slider'
 import { useToast } from "@/hooks/use-toast"
 
@@ -9,11 +9,11 @@ const MediaPlayer: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false)
   const [volume, setVolume] = useState(0.05)
   const [isMuted, setIsMuted] = useState(false)
-  const [minimized, setMinimized] = useState(false)
+  const [minimized, setMinimized] = useState(true)
+  const [showText, setShowText] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const { toast } = useToast()
 
-  // Load saved audio preferences from localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedVolume = localStorage.getItem('mediaPlayer-volume')
@@ -40,6 +40,12 @@ const MediaPlayer: React.FC = () => {
     if (isMuted) {
       audioRef.current.muted = true
     }
+
+    // Add play/pause event listeners to sync isPlaying state
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+    audioRef.current.addEventListener('play', handlePlay);
+    audioRef.current.addEventListener('pause', handlePause);
 
     // Try multiple autoplay strategies
     const attemptAutoplay = async () => {
@@ -87,6 +93,8 @@ const MediaPlayer: React.FC = () => {
     return () => {
       if (audioRef.current) {
         audioRef.current.pause()
+        audioRef.current.removeEventListener('play', handlePlay);
+        audioRef.current.removeEventListener('pause', handlePause);
         audioRef.current = null
       }
     }
@@ -106,12 +114,18 @@ const MediaPlayer: React.FC = () => {
     }
   }, [isMuted])
 
+  // Handle text fade-in after expansion
   useEffect(() => {
-    // Default to minimized on mobile
-    if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      setMinimized(true)
+    let timeout: NodeJS.Timeout | undefined;
+    if (!minimized) {
+      timeout = setTimeout(() => setShowText(true), 500); // match transition duration
+    } else {
+      setShowText(false);
     }
-  }, [])
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [minimized]);
 
   const togglePlay = () => {
     if (!audioRef.current) return
@@ -128,7 +142,6 @@ const MediaPlayer: React.FC = () => {
         })
       })
     }
-    setIsPlaying(!isPlaying)
   }
 
   const toggleMute = () => {
@@ -167,46 +180,55 @@ const MediaPlayer: React.FC = () => {
 
   return (
     <div
-      className={`fixed bottom-4 right-4 z-50 glass-card rounded-xl p-3 flex ${minimized ? 'items-center' : 'flex-col items-center'} gap-3 transition-all duration-200 ${minimized ? 'w-auto' : 'w-fit'}`}
-      style={{ cursor: 'pointer' }}
-      onClick={() => setMinimized((m) => !m)}
-      tabIndex={0}
-      aria-label={minimized ? 'Expand player' : 'Minimize player'}
+      className={`fixed bottom-4 right-4 z-50 glass-card rounded-xl flex transition-all duration-500 ease-in-out cursor-pointer
+        ${minimized ? 'items-center justify-center flex-row w-14 h-14 p-2' : 'flex-col items-center w-64 h-24 p-3 gap-3'}`}
+      style={{ position: 'fixed' }}
+      onMouseEnter={() => setMinimized(false)}
+      onMouseLeave={() => setMinimized(true)}
     >
+      {/* Title only in expanded mode, no arrow */}
       {!minimized && (
-        <span className="mb-1 text-sm font-semibold text-foreground/80 select-none text-center w-full">
-          Steven Universe Theme (2013)
-        </span>
+        <div className={`relative flex items-center w-full mb-1 transition-opacity duration-300 ${showText ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'} ease-out` }>
+          <span className="text-sm font-semibold text-foreground/80 select-none text-left w-full">
+            Steven Universe Theme (2013)
+          </span>
+        </div>
       )}
-      <div className={`flex items-center gap-3 ${minimized ? '' : 'w-full justify-center'}`}>
-        <button
-          onClick={e => { e.stopPropagation(); togglePlay(); }}
-          className="glass-card rounded-lg p-2 hover:bg-white/10 transition-colors"
-          aria-label={isPlaying ? 'Pause' : 'Play'}
-        >
-          {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-        </button>
-        {!minimized && (
-          <>
-            <button
-              onClick={e => { e.stopPropagation(); toggleMute(); }}
-              className="glass-card rounded-lg p-2 hover:bg-white/10 transition-colors"
-              aria-label={isMuted ? 'Unmute' : 'Mute'}
-            >
-              {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-            </button>
-            <div className="w-24">
-              <Slider
-                value={[volume]}
-                onValueChange={handleVolumeChange}
-                max={1}
-                step={0.01}
-                className="w-full"
-                onClick={e => e.stopPropagation()}
-              />
-            </div>
-          </>
-        )}
+      <div className={`flex items-center gap-3 ${minimized ? 'justify-center' : 'w-full justify-center'}`}>
+        <div className={
+          minimized
+            ? ''
+            : `transition-opacity transition-transform duration-300 ease-out ${showText ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`
+        } style={{ width: minimized ? '100%' : 'auto', display: 'flex', alignItems: 'center', gap: '0.75rem', justifyContent: minimized ? 'center' : 'flex-start' }}>
+          <button
+            onClick={minimized ? undefined : (e => { e.stopPropagation(); togglePlay(); })}
+            className={`glass-card rounded-lg p-2 transition-colors ${minimized ? 'pointer-events-none opacity-60' : 'hover:bg-white/10'}`}
+            aria-label={isPlaying ? 'Pause' : 'Play'}
+          >
+            {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+          </button>
+          {!minimized && (
+            <>
+              <button
+                onClick={e => { e.stopPropagation(); toggleMute(); }}
+                className="glass-card rounded-lg p-2 hover:bg-white/10 transition-colors"
+                aria-label={isMuted ? 'Unmute' : 'Mute'}
+              >
+                {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+              </button>
+              <div className="w-24">
+                <Slider
+                  value={[volume]}
+                  onValueChange={handleVolumeChange}
+                  max={1}
+                  step={0.01}
+                  className="w-full"
+                  onClick={e => e.stopPropagation()}
+                />
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   )

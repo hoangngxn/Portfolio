@@ -74,7 +74,7 @@
   }
 
   .floating-animation {
-    animation: float 6s ease-in-out infinite;
+    animation: float 2s ease-in-out infinite;
   }
 
   .floating-delayed {
@@ -88,10 +88,10 @@
 
 @keyframes float {
   0%, 100% {
-    transform: translateY(0px);
+    transform: translateY(2px);
   }
   50% {
-    transform: translateY(-10px);
+    transform: translateY(-4px);
   }
 }
 

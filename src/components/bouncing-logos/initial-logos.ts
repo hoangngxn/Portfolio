@@ -129,4 +129,26 @@ const generateInitialLogos = (): Logo[] => {
 };
 
 // Export the generated logos
-export const initialLogos: Logo[] = generateInitialLogos(); 
+export const initialLogos: Logo[] = generateInitialLogos();
+
+// Function to spawn a single random logo
+export function logoSpawn(isMobile: boolean, id: string, x?: number, y?: number): Logo {
+  const base = baseLogos[Math.floor(Math.random() * baseLogos.length)];
+  let coords;
+  if (typeof x === 'number' && typeof y === 'number') {
+    coords = { x, y };
+  } else {
+    coords = getRandomCoordinates(isMobile);
+  }
+  return {
+    id,
+    src: base.src,
+    alt: base.alt,
+    width: isMobile ? base.width : base.widthDesktop,
+    height: isMobile ? base.height : base.heightDesktop,
+    className: isMobile ? base.className : base.classNameDesktop,
+    speed: getRandomSpeed(),
+    direction: getRandomDirection(),
+    ...coords
+  };
+} 

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Logo } from './types';
-import { initialLogos, GLASS_CARD_SIZE_MOBILE, GLASS_CARD_SIZE_DESKTOP} from './initial-logos';
+import { initialLogos, GLASS_CARD_SIZE_MOBILE, GLASS_CARD_SIZE_DESKTOP, logoSpawn } from './initial-logos';
 import { useMouseVelocity } from './use-mouse-velocity';
 
 const BouncingLogos: React.FC = () => {
@@ -23,6 +23,12 @@ const BouncingLogos: React.FC = () => {
   // --- Smoothed cursor position ---
   const smoothedCursorRef = useRef<{ x: number; y: number } | null>(null);
   const SMOOTHING = 0.5; // 0 = no movement, 1 = instant snap
+
+  // For unique logo ids
+  const nextLogoIdRef = useRef(initialLogos.length);
+
+  // Add a ref for the spawn button
+  const spawnButtonRef = useRef<HTMLButtonElement>(null);
 
   // Save to localStorage when isPaused changes
   useEffect(() => {
@@ -224,21 +230,63 @@ const BouncingLogos: React.FC = () => {
     <div ref={containerRef} className="absolute inset-0 overflow-hidden bg-black/50">
       {/* Control Panel */}
       <div className="absolute top-4 right-4 flex gap-2 pointer-events-auto">
-        <button
-          onClick={() => setIsPaused(!isPaused)}
-          className="glass-card p-2 rounded-lg hover:bg-white/20 transition-colors"
-          title={isPaused ? "Resume Animation" : "Pause Animation"}
-        >
-          {isPaused ? (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+        {/* Pause/Resume Button */}
+        <div className="group relative flex items-center">
+          <button
+            ref={spawnButtonRef}
+            onClick={() => setIsPaused(!isPaused)}
+            className="glass-card p-2 rounded-lg hover:bg-white/20 flex items-center justify-between w-26"
+            title={isPaused ? "Resume Animation" : "Pause Animation"}
+          >
+            {isPaused ? (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            )}
+            <span className="text-sm font-medium text-right flex-1 ml-2">
+              {isPaused ? "Paused" : "Running"}
+            </span>
+          </button>
+        </div>
+        {/* Spawn Logo Button */}
+        <div className="group relative flex items-center">
+          <button
+            ref={spawnButtonRef}
+            onClick={() => {
+              setLogos(prev => {
+                const id = `logo-${nextLogoIdRef.current++}`;
+                let spawnX: number | undefined = undefined;
+                let spawnY: number | undefined = undefined;
+                if (spawnButtonRef.current && containerRef.current) {
+                  const buttonRect = spawnButtonRef.current.getBoundingClientRect();
+                  const containerRect = containerRef.current.getBoundingClientRect();
+                  spawnX = buttonRect.left - containerRect.left + buttonRect.width / 2 - (isMobile ? 24 : 32); // center logo
+                  spawnY = buttonRect.bottom - containerRect.top + 50; // 50px below button
+                  // Clamp to container bounds
+                  const maxX = containerRef.current.clientWidth - (isMobile ? 48 : 64);
+                  const maxY = containerRef.current.clientHeight - (isMobile ? 48 : 64);
+                  spawnX = Math.max(0, Math.min(spawnX, maxX));
+                  spawnY = Math.max(0, Math.min(spawnY, maxY));
+                }
+                const newLogo = logoSpawn(isMobile, id, spawnX, spawnY);
+                return [...prev, newLogo];
+              });
+            }}
+            className="glass-card p-2 rounded-lg hover:bg-green-400/20 flex items-center justify-between w-32"
+            title="Spawn Logo"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
             </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-          )}
-        </button>
+            <span className="text-sm font-medium text-right flex-1 ml-2">
+              Spawn Logo
+            </span>
+          </button>
+        </div>
       </div>
 
       {logos.map((logo) => (
@@ -261,7 +309,7 @@ const BouncingLogos: React.FC = () => {
         </div>
       ))}
       {/* Draw cursor hitbox for debugging/visual feedback */}
-      {smoothedCursorRef.current && (
+      {/* {smoothedCursorRef.current && (
         <div
           className="absolute border-2 border-pink-500 pointer-events-none z-50"
           style={{
@@ -274,7 +322,7 @@ const BouncingLogos: React.FC = () => {
             background: 'rgba(255,0,128,0.08)'
           }}
         />
-      )}
+      )} */}
     </div>
   );
 };

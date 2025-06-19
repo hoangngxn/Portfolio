@@ -6,7 +6,7 @@ export interface Logo {
   height: number;
   className: string;
   speed: number;
-  direction: number; // in radians
+  direction: number;
   x: number;
   y: number;
 } 
