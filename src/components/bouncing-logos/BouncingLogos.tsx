@@ -18,11 +18,16 @@ const BouncingLogos: React.FC = () => {
   const speedMultiplier = 1; // Slows down the overall movement
   const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
   const CURSOR_HITBOX_SIZE = 24; // px
-  const GRAVITY = 0.01;
+  const GRAVITY = 0;
 
-  // --- Smoothed cursor position ---
-  const smoothedCursorRef = useRef<{ x: number; y: number } | null>(null);
-  const SMOOTHING = 0.5; // 0 = no movement, 1 = instant snap
+  // --- Smoothed cursor position for grab only ---
+  const SMOOTHING = 0.3; // 0 = no movement, 1 = instant snap
+
+  // --- Grab and throw state ---
+  const [grabbedLogoId, setGrabbedLogoId] = useState<string | null>(null);
+  const grabOffsetRef = useRef<{ x: number; y: number } | null>(null);
+  const smoothedGrabPosRef = useRef<{ x: number; y: number } | null>(null);
+  const isMouseDownRef = useRef(false);
 
   // For unique logo ids
   const nextLogoIdRef = useRef(initialLogos.length);
@@ -37,6 +42,112 @@ const BouncingLogos: React.FC = () => {
     }
   }, [isPaused]);
 
+  // Mouse event handlers for grab/throw
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const cardSizePx = isMobile ? 48 : 64;
+
+    function getLogoAtPos(x: number, y: number) {
+      // Find topmost logo under the mouse
+      for (let i = logos.length - 1; i >= 0; i--) {
+        const logo = logos[i];
+        if (
+          x >= logo.x &&
+          x <= logo.x + cardSizePx &&
+          y >= logo.y &&
+          y <= logo.y + cardSizePx
+        ) {
+          return logo;
+        }
+      }
+      return null;
+    }
+
+    function handlePointerDown(e: MouseEvent | TouchEvent) {
+      if (isPaused) return;
+      let clientX: number, clientY: number;
+      if ('touches' in e) {
+        if (e.touches.length === 0) return;
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+      const rect = container.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      const logo = getLogoAtPos(x, y);
+      if (logo) {
+        setGrabbedLogoId(logo.id);
+        grabOffsetRef.current = { x: x - logo.x, y: y - logo.y };
+        smoothedGrabPosRef.current = { x: logo.x, y: logo.y };
+        isMouseDownRef.current = true;
+        e.preventDefault();
+      }
+    }
+
+    function handlePointerMove(e: MouseEvent | TouchEvent) {
+      if (!grabbedLogoId || !isMouseDownRef.current) return;
+      let clientX: number, clientY: number;
+      if ('touches' in e) {
+        if (e.touches.length === 0) return;
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+      const rect = container.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      if (grabOffsetRef.current && smoothedGrabPosRef.current) {
+        // Smoothly follow mouse
+        smoothedGrabPosRef.current.x += ((x - grabOffsetRef.current.x) - smoothedGrabPosRef.current.x) * 0.4;
+        smoothedGrabPosRef.current.y += ((y - grabOffsetRef.current.y) - smoothedGrabPosRef.current.y) * 0.4;
+      }
+    }
+
+    function handlePointerUp(e: MouseEvent | TouchEvent) {
+      if (!grabbedLogoId) return;
+      // On release, set velocity based on mouse velocity
+      setLogos(prev => prev.map(logo => {
+        if (logo.id === grabbedLogoId && mouseVelocityRef.current) {
+          const scale = 0.005; // tune for feel
+          const vx = mouseVelocityRef.current.vx * scale;
+          const vy = mouseVelocityRef.current.vy * scale;
+          const speed = Math.sqrt(vx * vx + vy * vy);
+          const direction = Math.atan2(vy, vx);
+          return { ...logo, speed, direction };
+        }
+        return logo;
+      }));
+      setGrabbedLogoId(null);
+      grabOffsetRef.current = null;
+      smoothedGrabPosRef.current = null;
+      isMouseDownRef.current = false;
+    }
+
+    container.addEventListener('mousedown', handlePointerDown);
+    container.addEventListener('mousemove', handlePointerMove);
+    window.addEventListener('mouseup', handlePointerUp);
+    // Touch events
+    container.addEventListener('touchstart', handlePointerDown, { passive: false });
+    container.addEventListener('touchmove', handlePointerMove, { passive: false });
+    window.addEventListener('touchend', handlePointerUp);
+
+    return () => {
+      container.removeEventListener('mousedown', handlePointerDown);
+      container.removeEventListener('mousemove', handlePointerMove);
+      window.removeEventListener('mouseup', handlePointerUp);
+      container.removeEventListener('touchstart', handlePointerDown);
+      container.removeEventListener('touchmove', handlePointerMove);
+      window.removeEventListener('touchend', handlePointerUp);
+    };
+  }, [containerRef, logos, grabbedLogoId, isPaused, isMobile]);
+
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -49,21 +160,21 @@ const BouncingLogos: React.FC = () => {
     const animate = () => {
       if (isPaused) return;
 
-      // --- Smooth the cursor position ---
-      if (cursorRef.current) {
-        if (!smoothedCursorRef.current) {
-          smoothedCursorRef.current = { ...cursorRef.current };
-        } else {
-          smoothedCursorRef.current.x += (cursorRef.current.x - smoothedCursorRef.current.x) * SMOOTHING;
-          smoothedCursorRef.current.y += (cursorRef.current.y - smoothedCursorRef.current.y) * SMOOTHING;
-        }
-      } else {
-        smoothedCursorRef.current = null;
-      }
-
       setLogos(prevLogos => {
-        // First, update all positions and velocities
         let updated = prevLogos.map(logo => {
+          // If grabbed, follow smoothed grab pos and do not add extra properties
+          if (logo.id === grabbedLogoId && smoothedGrabPosRef.current) {
+            return {
+              ...logo,
+              x: smoothedGrabPosRef.current.x,
+              y: smoothedGrabPosRef.current.y,
+              speed: 0,
+              direction: logo.direction,
+            };
+          } else if (logo.id === grabbedLogoId) {
+            // If grabbed but no smoothed pos, just return as-is
+            return logo;
+          }
           let vx = Math.cos(logo.direction) * logo.speed * speedMultiplier;
           let vy = Math.sin(logo.direction) * logo.speed * speedMultiplier;
           vy += GRAVITY;
@@ -80,12 +191,26 @@ const BouncingLogos: React.FC = () => {
           };
         });
 
+        // Split updated into grabbed and non-grabbed
+        const grabbed = updated.filter(l => l.id === grabbedLogoId);
+        type LogoWithPhysics = Logo & {
+          _vx: number;
+          _vy: number;
+          _newX: number;
+          _newY: number;
+          _hitWall: boolean;
+          _hitCursor: boolean;
+          _lastMouseCollision: number;
+          _lastWallCollision: number;
+        };
+        let nonGrabbed = updated.filter(l => l.id !== grabbedLogoId) as LogoWithPhysics[];
+
         // Logo-to-logo collision (AABB, only process each pair once)
         const cardSizePx = isMobile ? 48 : 64;
-        for (let i = 0; i < updated.length - 1; i++) {
-          for (let j = i + 1; j < updated.length; j++) {
-            const a = updated[i];
-            const b = updated[j];
+        for (let i = 0; i < nonGrabbed.length - 1; i++) {
+          for (let j = i + 1; j < nonGrabbed.length; j++) {
+            const a = nonGrabbed[i];
+            const b = nonGrabbed[j];
             if (
               a._newX < b._newX + cardSizePx &&
               a._newX + cardSizePx > b._newX &&
@@ -95,45 +220,40 @@ const BouncingLogos: React.FC = () => {
               // Swap velocities (arcade style)
               const tempVx = a._vx;
               const tempVy = a._vy;
-              updated[i]._vx = b._vx;
-              updated[i]._vy = b._vy;
-              updated[j]._vx = tempVx;
-              updated[j]._vy = tempVy;
+              nonGrabbed[i]._vx = b._vx;
+              nonGrabbed[i]._vy = b._vy;
+              nonGrabbed[j]._vx = tempVx;
+              nonGrabbed[j]._vy = tempVy;
               // Separate them so they don't stick
               // Move each logo away from the other by half the overlap
               const overlapX = Math.min(a._newX + cardSizePx, b._newX + cardSizePx) - Math.max(a._newX, b._newX);
               const overlapY = Math.min(a._newY + cardSizePx, b._newY + cardSizePx) - Math.max(a._newY, b._newY);
               if (overlapX < overlapY) {
-                // Separate in X
                 if (a._newX < b._newX) {
-                  updated[i]._newX -= overlapX / 2;
-                  updated[j]._newX += overlapX / 2;
+                  nonGrabbed[i]._newX -= overlapX / 2;
+                  nonGrabbed[j]._newX += overlapX / 2;
                 } else {
-                  updated[i]._newX += overlapX / 2;
-                  updated[j]._newX -= overlapX / 2;
+                  nonGrabbed[i]._newX += overlapX / 2;
+                  nonGrabbed[j]._newX -= overlapX / 2;
                 }
               } else {
-                // Separate in Y
                 if (a._newY < b._newY) {
-                  updated[i]._newY -= overlapY / 2;
-                  updated[j]._newY += overlapY / 2;
+                  nonGrabbed[i]._newY -= overlapY / 2;
+                  nonGrabbed[j]._newY += overlapY / 2;
                 } else {
-                  updated[i]._newY += overlapY / 2;
-                  updated[j]._newY -= overlapY / 2;
+                  nonGrabbed[i]._newY += overlapY / 2;
+                  nonGrabbed[j]._newY -= overlapY / 2;
                 }
               }
             }
           }
         }
 
-        // Now process wall/cursor collisions and convert back to speed/direction
-        return updated.map((logo, idx) => {
-          let { _vx: vx, _vy: vy, _newX: newX, _newY: newY, _lastMouseCollision: lastMouseCollision, _lastWallCollision: lastWallCollision } = logo;
+        // Now process wall collisions and convert back to speed/direction
+        nonGrabbed = nonGrabbed.map((logo, idx) => {
+          let { _vx: vx, _vy: vy, _newX: newX, _newY: newY, _lastWallCollision: lastWallCollision } = logo;
           let hitWall = false;
-          let hitCursor = false;
-          let newLastMouseCollision = lastMouseCollision;
           let newLastWallCollision = lastWallCollision;
-
           // Boundary checks with responsive size
           if (newX <= 0 || newX >= container.clientWidth - cardSizePx) {
             vx = -vx * bounciness;
@@ -147,73 +267,24 @@ const BouncingLogos: React.FC = () => {
             hitWall = true;
             newLastWallCollision = performance.now();
           }
-
-          // Cursor collision detection (using smoothed ref)
-          const cursorPos = smoothedCursorRef.current;
-          if (cursorPos) {
-            const logoLeft = newX;
-            const logoRight = newX + cardSizePx;
-            const logoTop = newY;
-            const logoBottom = newY + cardSizePx;
-            const cursorLeft = cursorPos.x - CURSOR_HITBOX_SIZE / 2;
-            const cursorRight = cursorPos.x + CURSOR_HITBOX_SIZE / 2;
-            const cursorTop = cursorPos.y - CURSOR_HITBOX_SIZE / 2;
-            const cursorBottom = cursorPos.y + CURSOR_HITBOX_SIZE / 2;
-            // Check for overlap
-            if (
-              logoRight > cursorLeft &&
-              logoLeft < cursorRight &&
-              logoBottom > cursorTop &&
-              logoTop < cursorBottom
-            ) {
-              // Only allow collision if cooldown has passed
-              const now = performance.now();
-              if (now - lastMouseCollision > 500) { //cooldown
-                const overlapX = Math.min(logoRight, cursorRight) - Math.max(logoLeft, cursorLeft);
-                const overlapY = Math.min(logoBottom, cursorBottom) - Math.max(logoTop, cursorTop);
-                if (overlapX < overlapY) {
-                  vx = -vx * bounciness;
-                  if (logoLeft < cursorLeft) {
-                    newX = cursorLeft - cardSizePx;
-                  } else {
-                    newX = cursorRight;
-                  }
-                } else {
-                  vy = -vy * bounciness;
-                  if (logoTop < cursorTop) {
-                    newY = cursorTop - cardSizePx;
-                  } else {
-                    newY = cursorBottom;
-                  }
-                }
-                if (mouseVelocityRef.current) {
-                  vx += mouseVelocityRef.current.vx * 0.003;
-                  vy += mouseVelocityRef.current.vy * 0.003;
-                }
-                hitCursor = true;
-                newLastMouseCollision = now;
-              }
-            }
-          }
-
           // Apply resistance (friction)
           vx *= resistance;
           vy *= resistance;
-
           // Convert velocity vector back to speed/direction
           const newSpeed = Math.sqrt(vx * vx + vy * vy);
           const newDirection = Math.atan2(vy, vx);
-
           return {
             ...logo,
             x: newX,
             y: newY,
             speed: newSpeed,
             direction: newDirection,
-            lastMouseCollision: newLastMouseCollision,
             lastWallCollision: newLastWallCollision
           };
         });
+
+        // Merge grabbed and non-grabbed for final state
+        return [...nonGrabbed, ...grabbed];
       });
 
       animationFrameId = requestAnimationFrame(animate);
@@ -224,7 +295,7 @@ const BouncingLogos: React.FC = () => {
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isPaused, isMobile]);
+  }, [isPaused, isMobile, grabbedLogoId]);
 
   return (
     <div ref={containerRef} className="absolute inset-0 overflow-hidden bg-black/50">
@@ -293,10 +364,13 @@ const BouncingLogos: React.FC = () => {
         <div
           key={logo.id}
           id={logo.id}
-          className={`absolute glass-card rounded-xl opacity-80 flex items-center justify-center ${isMobile ? GLASS_CARD_SIZE_MOBILE : GLASS_CARD_SIZE_DESKTOP} pointer-events-none`}
+          className={`absolute glass-card rounded-xl opacity-80 flex items-center justify-center ${isMobile ? GLASS_CARD_SIZE_MOBILE : GLASS_CARD_SIZE_DESKTOP} pointer-events-auto`}
           style={{
             transform: `translate(${logo.x}px, ${logo.y}px)`,
-            transition: 'transform 16ms linear'
+            transition: 'transform 16ms linear',
+            zIndex: logo.id === grabbedLogoId ? 50 : undefined,
+            boxShadow: logo.id === grabbedLogoId ? '0 0 0 2px #fff8' : undefined,
+            cursor: grabbedLogoId === logo.id ? 'grabbing' : 'grab',
           }}
         >
           <Image
@@ -308,21 +382,7 @@ const BouncingLogos: React.FC = () => {
           />
         </div>
       ))}
-      {/* Draw cursor hitbox for debugging/visual feedback */}
-      {/* {smoothedCursorRef.current && (
-        <div
-          className="absolute border-2 border-pink-500 pointer-events-none z-50"
-          style={{
-            left: smoothedCursorRef.current.x - CURSOR_HITBOX_SIZE / 2,
-            top: smoothedCursorRef.current.y - CURSOR_HITBOX_SIZE / 2,
-            width: CURSOR_HITBOX_SIZE,
-            height: CURSOR_HITBOX_SIZE,
-            borderRadius: 8,
-            boxSizing: 'border-box',
-            background: 'rgba(255,0,128,0.08)'
-          }}
-        />
-      )} */}
+      {/* (No cursor hitbox needed) */}
     </div>
   );
 };
