@@ -4,6 +4,7 @@ import { Logo } from './types';
 import { initialLogos, GLASS_CARD_SIZE_MOBILE, GLASS_CARD_SIZE_DESKTOP, logoSpawn } from './initial-logos';
 import { useMouseVelocity } from './use-mouse-velocity';
 import Matter from 'matter-js';
+import { Settings } from 'lucide-react';
 
 // =============================
 // Bouncing Logos Custom Settings
@@ -17,11 +18,6 @@ const CARD_SIZE_DESKTOP = 64;
 const THROW_SCALE = 0.005; // How much of the mouse velocity to apply to the throw
 const THROW_AVG_WINDOW = 100; // ms, time window for averaging mouse velocity
 
-// Physics (handled by matter.js now)
-const MATTER_GRAVITY_Y = 0;
-const MATTER_RESTITUTION = 1.1; // bounciness
-const MATTER_FRICTION_AIR = 0; // air resistance
-
 // Smoothing for grab follow
 const GRAB_SMOOTHING = 0.4; // 0 = no movement, 1 = instant snap
 
@@ -30,6 +26,11 @@ const GRABBED_Z_INDEX = 50;
 
 // Box shadow for grabbed logo
 const GRABBED_BOX_SHADOW = '0 0 0 2px #fff8';
+
+// Default physics settings (can be changed by user)
+const DEFAULT_GRAVITY_Y = 0;
+const DEFAULT_RESTITUTION = 1.01;
+const DEFAULT_FRICTION_AIR = 0;
 
 const BouncingLogos: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -60,6 +61,16 @@ const BouncingLogos: React.FC = () => {
   const grabOffsetRef = useRef<{ x: number; y: number } | null>(null);
   const isMouseDownRef = useRef(false);
 
+  // Physics settings state
+  const [gravityY, setGravityY] = useState(DEFAULT_GRAVITY_Y);
+  const [restitution, setRestitution] = useState(DEFAULT_RESTITUTION);
+  const [frictionAir, setFrictionAir] = useState(DEFAULT_FRICTION_AIR);
+  // For settings panel UI
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // For delayed collapse of settings panel
+  const collapseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Save to localStorage when isPaused changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -67,6 +78,18 @@ const BouncingLogos: React.FC = () => {
     }
   }, [isPaused]);
 
+  // Update physics settings on all bodies and engine when changed
+  useEffect(() => {
+    if (engineRef.current) {
+      engineRef.current.gravity.y = gravityY;
+    }
+    // Update all logo bodies
+    Object.values(bodiesRef.current).forEach(body => {
+      body.restitution = restitution;
+      body.frictionAir = frictionAir;
+    });
+  }, [gravityY, restitution, frictionAir]);
+  
   // Initialize Matter.js engine/world and create bodies for logos
   useEffect(() => {
     if (!containerRef.current) return;
@@ -76,7 +99,7 @@ const BouncingLogos: React.FC = () => {
 
     // Create engine and world
     const engine = Matter.Engine.create();
-    engine.gravity.y = MATTER_GRAVITY_Y;
+    engine.gravity.y = gravityY;
     engineRef.current = engine;
 
     // Create walls
@@ -102,8 +125,8 @@ const BouncingLogos: React.FC = () => {
         logo.y + cardSizePx / 2,
         cardSizePx / 2,
         {
-          restitution: MATTER_RESTITUTION,
-          frictionAir: MATTER_FRICTION_AIR,
+          restitution,
+          frictionAir,
           label: logo.id,
         }
       );
@@ -299,8 +322,8 @@ const BouncingLogos: React.FC = () => {
           newLogo.y + cardSizePx / 2,
           cardSizePx / 2,
           {
-            restitution: MATTER_RESTITUTION,
-            frictionAir: MATTER_FRICTION_AIR,
+            restitution,
+            frictionAir,
             label: newLogo.id,
           }
         );
@@ -319,6 +342,56 @@ const BouncingLogos: React.FC = () => {
     <div ref={containerRef} className="absolute inset-0 overflow-hidden bg-black/50">
       {/* Control Panel */}
       <div className="absolute top-4 right-4 flex gap-2 pointer-events-auto">
+        {/* Settings Panel (Cogwheel Icon, expanding button) */}
+        <div
+          className="relative flex items-center"
+          onMouseEnter={() => {
+            if (collapseTimeoutRef.current) {
+              clearTimeout(collapseTimeoutRef.current);
+              collapseTimeoutRef.current = null;
+            }
+            setSettingsOpen(true);
+          }}
+          onMouseLeave={() => {
+            if (collapseTimeoutRef.current) clearTimeout(collapseTimeoutRef.current);
+            collapseTimeoutRef.current = setTimeout(() => {
+              setSettingsOpen(false);
+            }, 500);
+          }}
+        >
+          <button
+            className="glass-card p-2 rounded-lg hover:bg-yellow-100/40 flex items-center justify-center w-10 h-10"
+            title="Physics Settings"
+            style={{ boxShadow: '0 2px 16px 0 #0002', cursor: 'pointer', zIndex: 20 }}
+          >
+            <Settings className="w-6 h-6 flex-shrink-0" />
+          </button>
+          {/* Expandable settings panel, absolutely positioned to the left of the button */}
+          <div
+            className={`absolute top-0 right-full mr-2 z-50 transition-all duration-300 ${settingsOpen ? 'w-64 h-64 opacity-100' : 'w-0 h-0 opacity-0 pointer-events-none'} glass-card rounded-xl flex flex-col items-start justify-start overflow-hidden`}
+            style={{ boxShadow: '0 2px 16px 0 #0002' }}
+          >
+            {settingsOpen && (
+              <div className="flex flex-col gap-3 w-full h-full justify-center p-3">
+                <div className="flex items-center gap-2 py-1">
+                  <span className="font-semibold text-base">Physics</span>
+                </div>
+                <label className="flex flex-col text-xs font-medium w-full">
+                  Gravity: <span className="text-xs text-gray-500">{gravityY.toFixed(2)}</span>
+                  <input type="range" min={0} max={1} step={0.01} value={gravityY} onChange={e => setGravityY(Number(e.target.value))} className="w-full" />
+                </label>
+                <label className="flex flex-col text-xs font-medium w-full">
+                  Restitution: <span className="text-xs text-gray-500">{restitution.toFixed(2)}</span>
+                  <input type="range" min={0} max={1.5} step={0.01} value={restitution} onChange={e => setRestitution(Number(e.target.value))} className="w-full" />
+                </label>
+                <label className="flex flex-col text-xs font-medium w-full">
+                  Friction Air: <span className="text-xs text-gray-500">{frictionAir.toFixed(2)}</span>
+                  <input type="range" min={0} max={1} step={0.01} value={frictionAir} onChange={e => setFrictionAir(Number(e.target.value))} className="w-full" />
+                </label>
+              </div>
+            )}
+          </div>
+        </div>
         {/* Pause/Resume Button */}
         <div className="group relative flex items-center">
           <button
