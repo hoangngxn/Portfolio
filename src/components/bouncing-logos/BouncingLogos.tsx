@@ -4,7 +4,7 @@ import { Logo } from './types';
 import { initialLogos, GLASS_CARD_SIZE_MOBILE, GLASS_CARD_SIZE_DESKTOP, logoSpawn } from './initial-logos';
 import { useMouseVelocity } from './use-mouse-velocity';
 import Matter from 'matter-js';
-import { Settings } from 'lucide-react';
+import { Settings, SquarePlus, SquareMinus } from 'lucide-react';
 
 // =============================
 // Bouncing Logos Custom Settings
@@ -147,18 +147,34 @@ const BouncingLogos: React.FC = () => {
     // Animation loop: sync Matter.js body positions to React state
     let frameId: number;
     const sync = () => {
-      setLogos(prev =>
-        prev.map(logo => {
+      setLogos(prev => {
+        const cardSizePx = isMobile ? CARD_SIZE_MOBILE : CARD_SIZE_DESKTOP;
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        // Only keep logos whose center is within the container bounds
+        return prev.filter(logo => {
           const body = bodiesRef.current[logo.id];
-          if (!body) return logo;
-          const cardSizePx = isMobile ? CARD_SIZE_MOBILE : CARD_SIZE_DESKTOP;
-          return {
-            ...logo,
-            x: body.position.x - cardSizePx / 2,
-            y: body.position.y - cardSizePx / 2,
-          };
-        })
-      );
+          if (!body) return false;
+          const cx = body.position.x;
+          const cy = body.position.y;
+          // Despawn if fully outside the screen (with a margin of half the card size)
+          if (
+            cx < -cardSizePx / 2 ||
+            cx > width + cardSizePx / 2 ||
+            cy < -cardSizePx / 2 ||
+            cy > height + cardSizePx / 2
+          ) {
+            // Remove body from Matter.js world
+            Matter.World.remove(engine.world, body);
+            delete bodiesRef.current[logo.id];
+            return false;
+          }
+          // Otherwise, update position
+          logo.x = body.position.x - cardSizePx / 2;
+          logo.y = body.position.y - cardSizePx / 2;
+          return true;
+        });
+      });
       frameId = requestAnimationFrame(sync);
     };
     sync();
@@ -338,10 +354,21 @@ const BouncingLogos: React.FC = () => {
     });
   }
 
+  // Despawn all logos and remove their bodies from the world
+  function handleDespawnAll() {
+    setLogos([]);
+    if (engineRef.current && bodiesRef.current) {
+      Object.values(bodiesRef.current).forEach(body => {
+        Matter.World.remove(engineRef.current!.world, body);
+      });
+      bodiesRef.current = {};
+    }
+  }
+
   return (
     <div ref={containerRef} className="absolute inset-0 overflow-hidden bg-black/50">
       {/* Control Panel */}
-      <div className="absolute top-4 right-4 flex gap-2 pointer-events-auto">
+      <div className="absolute top-4 right-4 flex gap-2 pointer-events-auto z-50">
         {/* Settings Panel (Cogwheel Icon, expanding button) */}
         <div
           className="relative flex items-center"
@@ -414,18 +441,26 @@ const BouncingLogos: React.FC = () => {
             </span>
           </button>
         </div>
-        {/* Spawn Logo Button */}
-        <div className="group relative flex items-center">
+        {/* Spawn/Despawn Buttons */}
+        <div className="group relative flex items-center gap-2">
           <button
             onClick={handleSpawnLogo}
             className="glass-card p-2 rounded-lg hover:bg-green-400/20 flex items-center justify-between w-32"
             title="Spawn Logo"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-            </svg>
+            <SquarePlus className="h-5 w-5 flex-shrink-0" />
             <span className="text-sm font-medium text-right flex-1 ml-2">
-              Spawn Logo
+              Spawn Ball
+            </span>
+          </button>
+          <button
+            onClick={handleDespawnAll}
+            className="glass-card p-2 rounded-lg hover:bg-red-400/20 flex items-center justify-between w-32"
+            title="Despawn All Logos"
+          >
+            <SquareMinus className="h-5 w-5 flex-shrink-0" />
+            <span className="text-sm font-medium text-right flex-1 ml-2">
+              Despawn All
             </span>
           </button>
         </div>
