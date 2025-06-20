@@ -28,6 +28,7 @@ export default function FlappyBird() {
   const gameStartTime = useRef<number>(0);
   const currentScoreRef = useRef<number>(0);
   const lastTimestampRef = useRef<number | null>(null);
+  const deathTimeRef = useRef<number>(0);
 
   const CANVAS_WIDTH = 432;
   const CANVAS_HEIGHT = 768;
@@ -73,6 +74,7 @@ export default function FlappyBird() {
     currentScoreRef.current = 0;
     isDeadRef.current = false;
     gameStartTime.current = 0;
+    deathTimeRef.current = 0;
     setHasStarted(false);
   };
 
@@ -96,9 +98,13 @@ export default function FlappyBird() {
         SoundLoader.playSound('wing');
       }
     } else {
-      // Restart game when player presses space after death
-      initGame();
-      setGameState('playing');
+      // Check if at least 1 second has passed since death
+      const timeSinceDeath = performance.now() - deathTimeRef.current;
+      if (timeSinceDeath >= 1000) {
+        // Restart game when player presses space after death
+        initGame();
+        setGameState('playing');
+      }
     }
   };
 
@@ -116,14 +122,19 @@ export default function FlappyBird() {
         SoundLoader.playSound('wing');
       }
     } else {
-      // Restart game when player clicks after death
-      initGame();
-      setGameState('playing');
+      // Check if at least 1 second has passed since death
+      const timeSinceDeath = performance.now() - deathTimeRef.current;
+      if (timeSinceDeath >= 1000) {
+        // Restart game when player clicks after death
+        initGame();
+        setGameState('playing');
+      }
     }
   };
 
   const handleDeath = () => {
     isDeadRef.current = true;
+    deathTimeRef.current = performance.now();
     if (playerRef.current) {
       playerRef.current.setDead(true);
     }

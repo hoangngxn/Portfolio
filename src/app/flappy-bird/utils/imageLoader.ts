@@ -14,13 +14,13 @@ export class ImageLoader {
 
     this.loadPromise = new Promise((resolve, reject) => {
       const imageFiles = {
-        background: '/images/background-night.png',
-        base: '/images/base.png',
-        birdMid: '/images/yellowbird-midflap.png',
-        birdUp: '/images/yellowbird-upflap.png',
-        birdDown: '/images/yellowbird-downflap.png',
-        pipeBody: '/images/pipe.png',
-        pipeTip: '/images/pipe-tip.png',
+        background: '/images/background.png',
+        base: '/images/base2.png',
+        birdMid: '/images/bluebird-midflap.png',
+        birdUp: '/images/bluebird-upflap.png',
+        birdDown: '/images/bluebird-downflap.png',
+        pipeBody: '/images/pipe2.png',
+        pipeTip: '/images/pipe-tip2.png',
         digit0: '/images/0.png',
         digit1: '/images/1.png',
         digit2: '/images/2.png',
