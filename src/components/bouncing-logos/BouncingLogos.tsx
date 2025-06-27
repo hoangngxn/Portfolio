@@ -76,12 +76,29 @@ const BouncingLogos: React.FC<BouncingLogosProps> = ({ profileCardRef }) => {
   // For delayed collapse of settings panel
   const collapseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Add hover states for individual buttons
+  const [hoveredButton, setHoveredButton] = useState<string | null>(null);
+  const [showButtonText, setShowButtonText] = useState<string | null>(null);
+
   // Save to localStorage when isPaused changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('bouncingLogos-paused', isPaused.toString());
     }
   }, [isPaused]);
+
+  // Handle text fade-in after button expansion
+  useEffect(() => {
+    let timeout: NodeJS.Timeout | undefined;
+    if (hoveredButton) {
+      timeout = setTimeout(() => setShowButtonText(hoveredButton), 500); // match transition duration
+    } else {
+      setShowButtonText(null);
+    }
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [hoveredButton]);
 
   // Update physics settings on all bodies and engine when changed
   useEffect(() => {
@@ -492,12 +509,21 @@ const BouncingLogos: React.FC<BouncingLogosProps> = ({ profileCardRef }) => {
             )}
           </div>
         </div>
+        
         {/* Pause/Resume Button */}
-        <div className="group relative flex items-center">
+        <div
+          className="relative flex items-center"
+          onMouseEnter={() => setHoveredButton('pause')}
+          onMouseLeave={() => setHoveredButton(null)}
+        >
           <button
             ref={spawnButtonRef}
             onClick={() => setIsPaused(!isPaused)}
-            className="glass-card p-2 rounded-lg hover:bg-white/20 flex items-center justify-between w-26"
+            className={`glass-card rounded-lg flex items-center transition-all duration-500 ease-in-out ${
+              hoveredButton === 'pause' 
+                ? 'w-32 h-10 px-3 hover:bg-white/20' 
+                : 'w-10 h-10 p-2 hover:bg-white/20'
+            }`}
             title={isPaused ? "Resume Animation" : "Pause Animation"}
           >
             {isPaused ? (
@@ -509,31 +535,52 @@ const BouncingLogos: React.FC<BouncingLogosProps> = ({ profileCardRef }) => {
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
             )}
-            <span className="text-sm font-medium text-right flex-1 ml-2">
+            <span className={`text-sm font-medium text-right flex-1 ml-2 transition-opacity duration-100 ${showButtonText === 'pause' ? 'opacity-100' : 'opacity-0'}`}>
               {isPaused ? "Paused" : "Running"}
             </span>
           </button>
         </div>
-        {/* Spawn/Despawn Buttons */}
-        <div className="group relative flex items-center gap-2">
+        
+        {/* Spawn Button */}
+        <div
+          className="relative flex items-center"
+          onMouseEnter={() => setHoveredButton('spawn')}
+          onMouseLeave={() => setHoveredButton(null)}
+        >
           <button
             onClick={handleSpawnLogo}
-            className="glass-card p-2 rounded-lg hover:bg-green-400/20 flex items-center justify-between w-32"
+            className={`glass-card rounded-lg flex items-center transition-all duration-500 ease-in-out ${
+              hoveredButton === 'spawn' 
+                ? 'w-32 h-10 px-3 hover:bg-green-400/20' 
+                : 'w-10 h-10 p-2 hover:bg-green-400/20'
+            }`}
             title="Spawn Logo"
           >
             <SquarePlus className="h-5 w-5 flex-shrink-0" />
-            <span className="text-sm font-medium text-right flex-1 ml-2">
+            <span className={`text-sm font-medium text-right flex-1 ml-2 transition-opacity duration-100 ${showButtonText === 'spawn' ? 'opacity-100' : 'opacity-0'}`}>
               Spawn Ball
             </span>
           </button>
+        </div>
+        
+        {/* Despawn Button */}
+        <div
+          className="relative flex items-center"
+          onMouseEnter={() => setHoveredButton('despawn')}
+          onMouseLeave={() => setHoveredButton(null)}
+        >
           <button
             onClick={handleDespawnAll}
-            className="glass-card p-2 rounded-lg hover:bg-red-400/20 flex items-center justify-between w-32"
+            className={`glass-card rounded-lg flex items-center transition-all duration-500 ease-in-out ${
+              hoveredButton === 'despawn' 
+                ? 'w-32 h-10 px-3 hover:bg-red-400/20' 
+                : 'w-10 h-10 p-2 hover:bg-red-400/20'
+            }`}
             title="Despawn All Logos"
           >
             <SquareMinus className="h-5 w-5 flex-shrink-0" />
-            <span className="text-sm font-medium text-right flex-1 ml-2">
-              Despawn All
+            <span className={`text-sm font-medium text-right flex-1 ml-2 transition-opacity duration-100 ${showButtonText === 'despawn' ? 'opacity-100' : 'opacity-0'}`}>
+              Remove All
             </span>
           </button>
         </div>
