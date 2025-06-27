@@ -110,7 +110,7 @@ const baseLogos = [
 const generateInitialLogos = (): Logo[] => {
   const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
   const logos: Logo[] = [];
-  for (let repeat = 0; repeat < 3; repeat++) {
+  for (let repeat = 0; repeat < 1; repeat++) {
     baseLogos.forEach((base, idx) => {
       logos.push({
         id: `logo-${repeat * baseLogos.length + idx}`,

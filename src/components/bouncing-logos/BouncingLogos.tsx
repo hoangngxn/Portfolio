@@ -29,7 +29,7 @@ const GRABBED_BOX_SHADOW = '0 0 0 2px #fff8';
 
 // Default physics settings (can be changed by user)
 const DEFAULT_GRAVITY_Y = 0;
-const DEFAULT_RESTITUTION = 1.01;
+const DEFAULT_RESTITUTION = 1.015;
 const DEFAULT_FRICTION_AIR = 0;
 
 type BouncingLogosProps = {

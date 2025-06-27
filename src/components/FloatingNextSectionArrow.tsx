@@ -102,7 +102,7 @@ const FloatingNextSectionArrow: React.FC = () => {
           100% { opacity: 0.5; }
         }
       `}</style>
-      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center">
         <div
           className="glass-card backdrop-blur-sm rounded-xl px-3 py-1 mb-2 pointer-events-auto"
           style={{ animation: 'fade-in-pulse 2.2s ease-in-out infinite' }}
