@@ -15,7 +15,6 @@ const HeroSection: React.FC = () => {
       backgroundRepeat: 'no-repeat'
     }}>
       <BouncingLogos profileCardRef={profileCardRef} />
-      <ClickCounter />
 
       <div ref={profileCardRef} className="max-w-3xl mx-auto text-center relative z-10 glass-card rounded-2xl p-4 md:p-6 backdrop-blur-sm">
         {/* Profile Image */}
